@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MANNA — EM Cargo Delivery System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;600;900&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+/* ─── RESET & ROOT ─────────────────────────────────────────────── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bp-bg:        #060e1c;
+  --bp-paper:     #07111f;
+  --bp-line:      #2a5fa8;
+  --bp-line-dim:  rgba(42,95,168,0.18);
+  --bp-line-med:  rgba(42,95,168,0.35);
+  --bp-cyan:      #4d9fff;
+  --bp-cyan-dim:  rgba(77,159,255,0.12);
+  --bp-cyan-glow: rgba(77,159,255,0.4);
+  --bp-white:     #c8deff;
+  --bp-dim:       #3a5a8c;
+  --bp-dimmer:    #1e3560;
+  --bp-amber:     #ffa726;
+  --bp-red:       #ef5350;
+  --bp-green:     #66bb6a;
+  --col-b:        #4fc3f7;
+  --col-i:        #ff9800;
+  --col-h:        #ef5350;
+  --font-tech:    'Share Tech Mono', monospace;
+  --font-display: 'Orbitron', monospace;
+  --font-body:    'DM Mono', monospace;
+}
+
+html { background: var(--bp-bg); height: 100%; }
+
+body {
+  font-family: var(--font-tech);
+  background: var(--bp-bg);
+  color: var(--bp-white);
+  height: 100vh;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ─── BLUEPRINT PAPER TEXTURE ───────────────────────────────────── */
+.bp-paper {
+  background-color: var(--bp-paper);
+  background-image:
+    linear-gradient(var(--bp-line-dim) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bp-line-dim) 1px, transparent 1px),
+    linear-gradient(rgba(42,95,168,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(42,95,168,0.06) 1px, transparent 1px);
+  background-size: 80px 80px, 80px 80px, 16px 16px, 16px 16px;
+  background-position: -1px -1px, -1px -1px, -1px -1px, -1px -1px;
+}
+
+/* ─── SHEETS ─────────────────────────────────────────────────────── */
+#sheet-viewport {
+  position: relative;
+  width: 100vw;
+  height: calc(100vh - 56px);
+  overflow: hidden;
+}
+
+.sheet {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 36px 20px;
+  transition: transform 0.55s cubic-bezier(0.77,0,0.175,1),
+              opacity 0.55s ease;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bp-line) transparent;
+}
+
+.sheet.hidden-left  { transform: translateX(-100%); opacity: 0; pointer-events: none; }
+.sheet.hidden-right { transform: translateX(100%);  opacity: 0; pointer-events: none; }
+.sheet.active       { transform: translateX(0);     opacity: 1; }
+
+/* ─── SHEET BORDER (blueprint drawing border) ───────────────────── */
+.sheet::before {
+  content: '';
+  position: absolute;
+  inset: 12px;
+  border: 1.5px solid var(--bp-line);
+  pointer-events: none;
+  z-index: 0;
+}
+.sheet::after {
+  content: '';
+  position: absolute;
+  inset: 16px;
+  border: 0.5px solid var(--bp-line-med);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.sheet-inner {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 24px 8px;
+}
+
+/* ─── SHEET HEADER ───────────────────────────────────────────────── */
+.sheet-header {
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--bp-line-med);
+}
+
+.sheet-num {
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  letter-spacing: 0.15em;
+  color: var(--bp-dim);
+  white-space: nowrap;
+}
+
+.sheet-title-bar {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  color: var(--bp-cyan);
+  text-transform: uppercase;
+}
+
+/* ─── TITLE BLOCK (bottom-right of each sheet) ──────────────────── */
+.title-block {
+  position: absolute;
+  bottom: 22px;
+  right: 28px;
+  border: 1px solid var(--bp-line);
+  font-family: var(--font-tech);
+  font-size: 0.55rem;
+  letter-spacing: 0.06em;
+  z-index: 10;
+  min-width: 220px;
+}
+
+.title-block table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.title-block td {
+  padding: 2px 8px;
+  border: 0.5px solid var(--bp-line-med);
+  color: var(--bp-dim);
+}
+.title-block td.label { color: var(--bp-dimmer); font-size: 0.48rem; }
+.title-block td.val   { color: var(--bp-white);  }
+.title-block td.big {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 900;
+  color: var(--bp-cyan);
+  letter-spacing: 0.2em;
+  text-align: center;
+  padding: 4px 8px;
+}
+
+/* ─── SHEET 00 — COVER ───────────────────────────────────────────── */
+.cover-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 0;
+  padding: 20px 0 80px;
+}
+
+.cover-label {
+  font-family: var(--font-tech);
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  color: var(--bp-dim);
+  margin-bottom: 12px;
+}
+
+.cover-title {
+  font-family: var(--font-display);
+  font-size: clamp(4rem, 12vw, 9rem);
+  font-weight: 900;
+  color: var(--bp-cyan);
+  letter-spacing: 0.08em;
+  line-height: 0.9;
+  text-shadow: 0 0 60px var(--bp-cyan-glow), 0 0 120px rgba(77,159,255,0.15);
+  margin-bottom: 8px;
+}
+
+.cover-subtitle {
+  font-family: var(--font-display);
+  font-size: clamp(0.55rem, 1.2vw, 0.75rem);
+  letter-spacing: 0.22em;
+  color: var(--bp-white);
+  margin-bottom: 32px;
+  padding-left: 4px;
+}
+
+.cover-desc {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  color: var(--bp-dim);
+  letter-spacing: 0.04em;
+  line-height: 1.8;
+  max-width: 560px;
+  margin-bottom: 40px;
+  border-left: 2px solid var(--bp-line);
+  padding-left: 16px;
+}
+
+.cover-meta {
+  display: grid;
+  grid-template-columns: repeat(4, auto);
+  gap: 0;
+  border: 1px solid var(--bp-line);
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  margin-bottom: 48px;
+}
+.cover-meta-cell {
+  padding: 5px 14px;
+  border-right: 1px solid var(--bp-line-med);
+}
+.cover-meta-cell:last-child { border-right: none; }
+.cover-meta-cell .mk { color: var(--bp-dimmer); font-size: 0.48rem; display: block; }
+.cover-meta-cell .mv { color: var(--bp-white); }
+
+.repo-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.repo-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 22px;
+  border: 1.5px solid;
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+.repo-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.repo-btn:hover::before { opacity: 1; }
+.repo-btn:hover { transform: translateY(-2px); }
+.repo-btn:active { transform: translateY(0); }
+
+.repo-btn-manna {
+  border-color: var(--bp-cyan);
+  color: var(--bp-cyan);
+}
+.repo-btn-manna::before { background: var(--bp-cyan-dim); }
+.repo-btn-manna:hover { box-shadow: 0 0 20px rgba(77,159,255,0.3), inset 0 0 20px rgba(77,159,255,0.05); }
+
+.repo-btn-bgkpjr {
+  border-color: var(--bp-amber);
+  color: var(--bp-amber);
+}
+.repo-btn-bgkpjr::before { background: rgba(255,167,38,0.08); }
+.repo-btn-bgkpjr:hover { box-shadow: 0 0 20px rgba(255,167,38,0.3), inset 0 0 20px rgba(255,167,38,0.05); }
+
+.repo-sep {
+  width: 1px;
+  background: var(--bp-line-med);
+  margin: 0 4px;
+}
+.repo-sep-label {
+  font-size: 0.5rem;
+  color: var(--bp-dimmer);
+  letter-spacing: 0.1em;
+  align-self: center;
+}
+
+/* ─── SHEET 01 — POD SPECS ───────────────────────────────────────── */
+.pod-drawing-area {
+  background: rgba(4, 10, 20, 0.6);
+  border: 1px solid var(--bp-line-med);
+  padding: 24px 16px 12px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.pod-drawing-area::before {
+  content: 'SIDE ELEVATION — 1:50 SCALE';
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  font-size: 0.5rem;
+  letter-spacing: 0.12em;
+  color: var(--bp-dimmer);
+}
+
+#pod-svg {
+  width: 100%;
+  height: 240px;
+  display: block;
+}
+
+.specs-table-wrap {
+  overflow-x: auto;
+  margin-bottom: 16px;
+}
+.specs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.67rem;
+  letter-spacing: 0.05em;
+}
+.specs-table th {
+  background: rgba(42,95,168,0.15);
+  color: var(--bp-dim);
+  font-family: var(--font-display);
+  font-size: 0.52rem;
+  letter-spacing: 0.14em;
+  padding: 7px 12px;
+  border: 1px solid var(--bp-line-med);
+  text-align: left;
+  white-space: nowrap;
+}
+.specs-table td {
+  padding: 6px 12px;
+  border: 1px solid var(--bp-line-med);
+  color: var(--bp-white);
+  white-space: nowrap;
+}
+.specs-table tr:hover td { background: rgba(77,159,255,0.04); }
+.specs-table td.tag { color: var(--bp-dimmer); font-size: 0.55rem; }
+.specs-table td.derived { color: var(--bp-cyan); }
+.variant-b { color: var(--col-b) !important; font-weight: 500; }
+.variant-i { color: var(--col-i) !important; font-weight: 500; }
+.variant-h { color: var(--col-h) !important; font-weight: 500; }
+
+/* ─── SHEET 02 — TRAJECTORY ──────────────────────────────────────── */
+.traj-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.view-toggle {
+  display: flex;
+  border: 1px solid var(--bp-line);
+  overflow: hidden;
+}
+.view-toggle button {
+  padding: 7px 16px;
+  background: transparent;
+  border: none;
+  color: var(--bp-dim);
+  font-family: var(--font-tech);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.view-toggle button.active {
+  background: var(--bp-cyan-dim);
+  color: var(--bp-cyan);
+}
+.view-toggle button:first-child { border-right: 1px solid var(--bp-line); }
+.view-toggle button:hover:not(.active) { background: rgba(42,95,168,0.1); color: var(--bp-white); }
+
+.traj-legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+  color: var(--bp-dim);
+}
+.legend-swatch {
+  width: 20px;
+  height: 2px;
+}
+
+.canvas-wrap {
+  border: 1px solid var(--bp-line-med);
+  background: #04080f;
+  position: relative;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+#traj-canvas {
+  display: block;
+  width: 100%;
+  height: 400px;
+}
+
+.canvas-status {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 0.52rem;
+  letter-spacing: 0.1em;
+  color: var(--bp-dimmer);
+}
+
+.traj-table-wrap {
+  overflow-x: auto;
+  margin-bottom: 8px;
+}
+.traj-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+}
+.traj-table th {
+  background: rgba(42,95,168,0.15);
+  color: var(--bp-dim);
+  font-family: var(--font-display);
+  font-size: 0.52rem;
+  letter-spacing: 0.12em;
+  padding: 6px 12px;
+  border: 1px solid var(--bp-line-med);
+  text-align: left;
+  white-space: nowrap;
+}
+.traj-table td {
+  padding: 6px 12px;
+  border: 1px solid var(--bp-line-med);
+  white-space: nowrap;
+}
+.traj-table tr.drag-kill td { background: rgba(239,83,80,0.08); }
+.traj-table tr.drag-kill td.status { color: var(--bp-amber); font-weight: 500; }
+.traj-table td.v01-claim { color: var(--bp-dimmer); }
+.traj-table td.sim-result { color: var(--bp-cyan); }
+.traj-table td.error-factor { color: var(--bp-red); font-weight: 500; }
+
+.traj-note {
+  font-size: 0.58rem;
+  color: var(--bp-dimmer);
+  letter-spacing: 0.05em;
+  line-height: 1.7;
+  padding: 8px 12px;
+  border-left: 2px solid var(--bp-amber);
+  background: rgba(255,167,38,0.04);
+  margin-bottom: 70px;
+}
+.traj-note strong { color: var(--bp-amber); }
+
+/* ─── NAVIGATION BAR ─────────────────────────────────────────────── */
+#nav-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background: rgba(4, 8, 18, 0.97);
+  border-top: 1px solid var(--bp-line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid var(--bp-line);
+  color: var(--bp-dim);
+  font-family: var(--font-display);
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  padding: 7px 18px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 100px;
+}
+.nav-btn:hover:not(:disabled) {
+  border-color: var(--bp-cyan);
+  color: var(--bp-cyan);
+  box-shadow: 0 0 14px rgba(77,159,255,0.2);
+}
+.nav-btn:disabled { opacity: 0.25; cursor: default; }
+.nav-btn-next { justify-content: flex-end; }
+
+.sheet-dots {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dot-label {
+  font-family: var(--font-tech);
+  font-size: 0.52rem;
+  letter-spacing: 0.1em;
+}
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1px solid var(--bp-line);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.dot.active {
+  background: var(--bp-cyan);
+  border-color: var(--bp-cyan);
+  box-shadow: 0 0 8px var(--bp-cyan-glow);
+}
+.dot:hover:not(.active) { border-color: var(--bp-white); }
+
+/* ─── SCROLLBAR ──────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bp-line); border-radius: 2px; }
+</style>
+</head>
+<body class="bp-paper">
+
+<div id="sheet-viewport">
+
+  <!-- ══════════════════════════════════════ SHEET 00 — COVER ══ -->
+  <div class="sheet active bp-paper" id="sheet-00">
+    <div class="sheet-inner">
+      <div class="sheet-header">
+        <span class="sheet-num">DRAWING MNP-000</span>
+        <span class="sheet-title-bar">PROJECT MANNA — COVER SHEET</span>
+      </div>
+
+      <div class="cover-body">
+        <div class="cover-label">PROJECT DESIGNATION EM-CDL-001</div>
+        <div class="cover-title">MANNA</div>
+        <div class="cover-subtitle">ELECTROMAGNETIC MASS-DRIVER CARGO DELIVERY SYSTEM</div>
+
+        <div class="cover-desc">
+          Three-variant suborbital cargo pod launched from electromagnetic rail.<br>
+          Ground-based EM acceleration to hypersonic exit velocity.<br>
+          Ballistic delivery of humanitarian and logistics payloads.<br>
+          <span style="color:var(--bp-red);font-size:0.7em;">⚠ v0.1 trajectory claims under forensic review — see Sheet 02.</span>
+        </div>
+
+        <div class="cover-meta">
+          <div class="cover-meta-cell">
+            <span class="mk">PROJECT</span>
+            <span class="mv">MANNA / EM-CDL</span>
+          </div>
+          <div class="cover-meta-cell">
+            <span class="mk">REV</span>
+            <span class="mv">0.1 — DRAFT</span>
+          </div>
+          <div class="cover-meta-cell">
+            <span class="mk">DATE</span>
+            <span class="mv">2026-04-25</span>
+          </div>
+          <div class="cover-meta-cell">
+            <span class="mk">DRAWN</span>
+            <span class="mv">S. BRAZELTON + CLAUDE (ANTHROPIC)</span>
+          </div>
+        </div>
+
+        <div class="repo-row">
+          <a href="https://github.com/thebardchat/manna"
+             target="_blank" rel="noopener"
+             class="repo-btn repo-btn-manna">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+            </svg>
+            MANNA REPO →
+          </a>
+          <div style="display:flex;align-items:center;gap:8px;margin:0 4px;">
+            <div class="repo-sep" style="height:36px;"></div>
+            <span class="repo-sep-label">SEPARATE<br>PROJECT</span>
+            <div class="repo-sep" style="height:36px;"></div>
+          </div>
+          <a href="https://github.com/thebardchat/BGKPJR-Core-Simulations"
+             target="_blank" rel="noopener"
+             class="repo-btn repo-btn-bgkpjr">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+            </svg>
+            BGKPJR REPO →
+          </a>
+        </div>
+      </div>
+
+      <div class="title-block">
+        <table>
+          <tr><td colspan="2" class="big">MANNA</td></tr>
+          <tr><td class="label">DRAWING</td><td class="val">MNP-000</td></tr>
+          <tr><td class="label">TITLE</td><td class="val">COVER SHEET</td></tr>
+          <tr><td class="label">SCALE</td><td class="val">N/A</td></tr>
+          <tr><td class="label">DATE</td><td class="val">2026-04-25</td></tr>
+          <tr><td class="label">DRAWN</td><td class="val">S. BRAZELTON + CLAUDE</td></tr>
+          <tr><td class="label">CHECKED</td><td class="val">PENDING</td></tr>
+          <tr><td class="label">SHEET</td><td class="val">00 OF 02</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════ SHEET 01 — POD SPECS ══ -->
+  <div class="sheet hidden-right bp-paper" id="sheet-01">
+    <div class="sheet-inner">
+      <div class="sheet-header">
+        <span class="sheet-num">DRAWING MNP-001</span>
+        <span class="sheet-title-bar">SHEET 01 — POD VARIANT SPECIFICATIONS</span>
+      </div>
+
+      <div class="pod-drawing-area">
+        <svg id="pod-svg" viewBox="0 0 900 240" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+
+      <div class="specs-table-wrap">
+        <table class="specs-table">
+          <thead>
+            <tr>
+              <th>VARIANT</th>
+              <th>MASS (kg)</th>
+              <th>DIAM (m)</th>
+              <th>CD₀</th>
+              <th>BC (kg/m²)</th>
+              <th>v_LAUNCH (m/s)</th>
+              <th>v0.1 APOGEE</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="variant-b">MANNA-B</td>
+              <td>80 <span class="tag">[EST]</span></td>
+              <td>0.40 <span class="tag">[EST]</span></td>
+              <td>0.40 <span class="tag">[EST]</span></td>
+              <td class="derived">1,592 <span class="tag">[DERIVED]</span></td>
+              <td class="derived">4,318 <span class="tag">[DERIVED]</span></td>
+              <td style="color:var(--bp-red)">247 km ⚠</td>
+            </tr>
+            <tr>
+              <td class="variant-i">MANNA-I</td>
+              <td>250 <span class="tag">[EST]</span></td>
+              <td>0.65 <span class="tag">[EST]</span></td>
+              <td>0.42 <span class="tag">[EST]</span></td>
+              <td class="derived">1,794 <span class="tag">[DERIVED]</span></td>
+              <td class="derived">7,670 <span class="tag">[DERIVED]</span></td>
+              <td style="color:var(--bp-red)">850 km ⚠</td>
+            </tr>
+            <tr>
+              <td class="variant-h">MANNA-H</td>
+              <td>800 <span class="tag">[EST]</span></td>
+              <td>1.00 <span class="tag">[EST]</span></td>
+              <td>0.45 <span class="tag">[EST]</span></td>
+              <td class="derived">2,264 <span class="tag">[DERIVED]</span></td>
+              <td class="derived">10,814 <span class="tag">[DERIVED]</span></td>
+              <td style="color:var(--bp-red)">1,950 km ⚠</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="traj-note" style="margin-bottom:16px;">
+        <strong>NOTE:</strong> All mass, diameter, and Cd₀ values are [ESTIMATE] — awaiting structural design and CFD.
+        BC and v_launch are [DERIVED] from vis-viva equation to reproduce v0.1 vacuum apogee claims.
+        v0.1 apogee values are [PLACEHOLDER] — superseded by atmospheric simulation on Sheet 02.
+      </div>
+
+      <div class="title-block">
+        <table>
+          <tr><td colspan="2" class="big">MANNA</td></tr>
+          <tr><td class="label">DRAWING</td><td class="val">MNP-001</td></tr>
+          <tr><td class="label">TITLE</td><td class="val">POD SPECIFICATIONS</td></tr>
+          <tr><td class="label">SCALE</td><td class="val">1:50</td></tr>
+          <tr><td class="label">DATE</td><td class="val">2026-04-25</td></tr>
+          <tr><td class="label">DRAWN</td><td class="val">S. BRAZELTON + CLAUDE</td></tr>
+          <tr><td class="label">CHECKED</td><td class="val">PENDING</td></tr>
+          <tr><td class="label">SHEET</td><td class="val">01 OF 02</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ SHEET 02 — TRAJECTORY ══ -->
+  <div class="sheet hidden-right bp-paper" id="sheet-02">
+    <div class="sheet-inner">
+      <div class="sheet-header">
+        <span class="sheet-num">DRAWING MNP-002</span>
+        <span class="sheet-title-bar">SHEET 02 — BALLISTIC TRAJECTORY ANALYSIS — 30° ELEVATION</span>
+      </div>
+
+      <div class="traj-controls">
+        <div class="view-toggle">
+          <button id="btn-vacuum" class="active" onclick="setMode('vacuum')">
+            VACUUM MODEL (v0.1)
+          </button>
+          <button id="btn-atmo" onclick="setMode('atmo')">
+            ATMOSPHERE SIM (RK4)
+          </button>
+        </div>
+        <div class="traj-legend">
+          <div class="legend-item">
+            <div class="legend-swatch" style="background:var(--col-b)"></div>
+            MANNA-B
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background:var(--col-i)"></div>
+            MANNA-I
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background:var(--col-h)"></div>
+            MANNA-H
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background:transparent;border-top:1px dashed #4d9fff;width:20px;height:0;margin-top:1px"></div>
+            KÁRMÁN LINE (100 km)
+          </div>
+        </div>
+      </div>
+
+      <div class="canvas-wrap">
+        <canvas id="traj-canvas"></canvas>
+        <div class="canvas-status" id="canvas-status">COMPUTING…</div>
+      </div>
+
+      <div class="traj-table-wrap">
+        <table class="traj-table" id="results-table">
+          <thead>
+            <tr>
+              <th>VARIANT</th>
+              <th>v0.1 CLAIM (km)</th>
+              <th>SIM APOGEE (km)</th>
+              <th>ERROR FACTOR</th>
+              <th>BC (kg/m²)</th>
+              <th>MAX-Q (kPa)</th>
+              <th>STATUS</th>
+            </tr>
+          </thead>
+          <tbody id="results-tbody">
+            <tr class="drag-kill">
+              <td class="variant-b">MANNA-B</td>
+              <td class="v01-claim">247.0</td>
+              <td class="sim-result" id="sim-b">—</td>
+              <td class="error-factor" id="err-b">—</td>
+              <td>1,592</td>
+              <td id="mq-b">—</td>
+              <td class="status">⚠ DRAG KILLS</td>
+            </tr>
+            <tr class="drag-kill">
+              <td class="variant-i">MANNA-I</td>
+              <td class="v01-claim">850.0</td>
+              <td class="sim-result" id="sim-i">—</td>
+              <td class="error-factor" id="err-i">—</td>
+              <td>1,794</td>
+              <td id="mq-i">—</td>
+              <td class="status">⚠ DRAG KILLS</td>
+            </tr>
+            <tr class="drag-kill">
+              <td class="variant-h">MANNA-H</td>
+              <td class="v01-claim">1,950.0</td>
+              <td class="sim-result" id="sim-h">—</td>
+              <td class="error-factor" id="err-h">—</td>
+              <td>2,264</td>
+              <td id="mq-h">—</td>
+              <td class="status">⚠ DRAG KILLS</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="traj-note">
+        <strong>FINDING:</strong> v0.1 paper used vacuum constant-g parabolic formula with no atmosphere.
+        Sea-level dynamic pressure at launch velocities 4,318–10,814 m/s exceeds <strong>11–72 MPa</strong>,
+        producing <strong>730–3,200 g</strong> drag deceleration. All variants are stopped in the lower troposphere.
+        Error: <strong>59–215× overestimate</strong>.
+        Architecture redesign required: high-altitude rail, vacuum tube, or significantly reduced launch velocity.
+        All apogee figures in this document are [DERIVED] from Python RK4 simulator + US Std Atm 1976.
+      </div>
+
+      <div class="title-block">
+        <table>
+          <tr><td colspan="2" class="big">MANNA</td></tr>
+          <tr><td class="label">DRAWING</td><td class="val">MNP-002</td></tr>
+          <tr><td class="label">TITLE</td><td class="val">TRAJECTORY ANALYSIS</td></tr>
+          <tr><td class="label">SCALE</td><td class="val">SEE CANVAS</td></tr>
+          <tr><td class="label">DATE</td><td class="val">2026-04-25</td></tr>
+          <tr><td class="label">DRAWN</td><td class="val">S. BRAZELTON + CLAUDE</td></tr>
+          <tr><td class="label">CHECKED</td><td class="val">PENDING</td></tr>
+          <tr><td class="label">SHEET</td><td class="val">02 OF 02</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /sheet-viewport -->
+
+<!-- ─── NAVIGATION BAR ─────────────────────────────────────────── -->
+<div id="nav-bar">
+  <button class="nav-btn" id="btn-prev" onclick="prevSheet()" disabled>← PREV</button>
+
+  <div class="sheet-dots">
+    <span class="dot-label">SHEET</span>
+    <div class="dot active" id="dot-0" onclick="goSheet(0)"></div>
+    <div class="dot" id="dot-1" onclick="goSheet(1)"></div>
+    <div class="dot" id="dot-2" onclick="goSheet(2)"></div>
+  </div>
+
+  <button class="nav-btn nav-btn-next" id="btn-next" onclick="nextSheet()">NEXT →</button>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════════════════════ */
+const SHEETS = ['sheet-00','sheet-01','sheet-02'];
+let current = 0;
+
+function goSheet(n) {
+  const prev = current;
+  current = Math.max(0, Math.min(n, SHEETS.length - 1));
+  if (prev === current) return;
+
+  const dir = (current > prev) ? 1 : -1;
+  const from = document.getElementById(SHEETS[prev]);
+  const to   = document.getElementById(SHEETS[current]);
+
+  from.classList.remove('active');
+  from.classList.add(dir > 0 ? 'hidden-left' : 'hidden-right');
+  to.classList.remove('hidden-left','hidden-right');
+  to.classList.add('active');
+
+  document.querySelectorAll('.dot').forEach((d,i) =>
+    d.classList.toggle('active', i === current));
+  document.getElementById('btn-prev').disabled = (current === 0);
+  document.getElementById('btn-next').disabled = (current === SHEETS.length - 1);
+
+  if (current === 2) requestAnimationFrame(drawTraj);
+}
+
+function nextSheet() { goSheet(current + 1); }
+function prevSheet() { goSheet(current - 1); }
+
+/* ═══════════════════════════════════════════════════════
+   POD SVG DRAWING  (Sheet 01)
+   All pods drawn at same scale: 1px = 0.02m (1:50)
+   The viewBox is 900×240; origin of each pod centered
+   in its slot.
+══════════════════════════════════════════════════════ */
+(function drawPods() {
+  const svg = document.getElementById('pod-svg');
+  const NS = 'http://www.w3.org/2000/svg';
+
+  const PX_PER_M = 50;  // 1:50 scale → 50px = 1m
+
+  // Variants: [name, diam_m, length_m, mass_kg, bc, color]
+  const pods = [
+    { name:'MANNA-B', d:0.40, l:1.60, m:80,  bc:'1,592', col:'#4fc3f7' },
+    { name:'MANNA-I', d:0.65, l:2.60, m:250, bc:'1,794', col:'#ff9800' },
+    { name:'MANNA-H', d:1.00, l:4.00, m:800, bc:'2,264', col:'#ef5350' },
+  ];
+
+  // Slot widths
+  const SW = 300; // viewBox width per pod
+  const CY = 120; // vertical center
+
+  const DIM_COLOR   = '#2a5fa8';
+  const TEXT_COLOR  = '#5a8fbf';
+  const LABEL_COLOR = '#c8deff';
+
+  function el(tag, attrs) {
+    const e = document.createElementNS(NS, tag);
+    Object.entries(attrs).forEach(([k,v]) => e.setAttribute(k,v));
+    return e;
+  }
+  function txt(x, y, str, attrs={}) {
+    const t = el('text', { x, y,
+      'font-family': 'Share Tech Mono, monospace',
+      'font-size': attrs.fs || '9',
+      fill: attrs.fill || TEXT_COLOR,
+      'text-anchor': attrs.anchor || 'middle',
+      'letter-spacing': '0.5',
+      ...attrs });
+    t.textContent = str;
+    return t;
+  }
+  function line(x1,y1,x2,y2, attrs={}) {
+    return el('line', {x1,y1,x2,y2, stroke: DIM_COLOR, 'stroke-width':'0.7', ...attrs});
+  }
+  function dimArrow(x1,y1,x2,y2, label, horiz=true) {
+    const g = el('g',{});
+    g.appendChild(line(x1,y1,x2,y2));
+    // tick marks at ends
+    if (horiz) {
+      g.appendChild(line(x1,y1-4,x1,y1+4));
+      g.appendChild(line(x2,y1-4,x2,y1+4));
+      const mx = (x1+x2)/2, my = y1-8;
+      g.appendChild(txt(mx,my,label,{fs:'8',fill:DIM_COLOR}));
+    } else {
+      g.appendChild(line(x1-4,y1,x1+4,y1));
+      g.appendChild(line(x1-4,y2,x1+4,y2));
+      const mx = x1-16, my = (y1+y2)/2;
+      g.appendChild(txt(mx,my,label,{fs:'8',fill:DIM_COLOR,'text-anchor':'end'}));
+    }
+    return g;
+  }
+
+  pods.forEach((pod, i) => {
+    const cx = SW * i + SW / 2;
+    const pw = pod.l * PX_PER_M;   // total length in px
+    const ph = pod.d * PX_PER_M;   // diameter in px
+    const noseLen = pod.d * PX_PER_M * 1.2; // nose cone length = 1.2× diameter
+    const bodyLen = pw - noseLen;
+
+    const x0 = cx - pw/2;  // leftmost x (nose tip)
+    const ytop = CY - ph/2;
+    const ybot = CY + ph/2;
+
+    const g = el('g', {});
+
+    // Blueprint grid lines in slot (light)
+    for (let gx = SW*i; gx < SW*(i+1); gx += 16) {
+      g.appendChild(line(gx,0,gx,240,{stroke:'rgba(42,95,168,0.06)','stroke-width':'0.5'}));
+    }
+    for (let gy = 0; gy < 240; gy += 16) {
+      g.appendChild(line(SW*i,gy,SW*(i+1),gy,{stroke:'rgba(42,95,168,0.06)','stroke-width':'0.5'}));
+    }
+
+    // Slot divider
+    if (i > 0) {
+      g.appendChild(line(SW*i,10,SW*i,230,{stroke:'rgba(42,95,168,0.3)','stroke-width':'0.5','stroke-dasharray':'4,4'}));
+    }
+
+    // Body rectangle
+    const bodyX = x0 + noseLen;
+    const bodyRect = el('rect', {
+      x: bodyX, y: ytop, width: bodyLen, height: ph,
+      fill: 'rgba(4,10,20,0.8)',
+      stroke: pod.col, 'stroke-width': '1.2'
+    });
+    g.appendChild(bodyRect);
+
+    // Nose cone (triangle pointing left — nose at front)
+    const nosePath = `M${x0},${CY} L${bodyX},${ytop} L${bodyX},${ybot} Z`;
+    const nose = el('path', {
+      d: nosePath,
+      fill: 'rgba(4,10,20,0.8)',
+      stroke: pod.col, 'stroke-width': '1.2',
+      'stroke-linejoin': 'miter'
+    });
+    g.appendChild(nose);
+
+    // Internal detail lines (center line)
+    g.appendChild(line(x0-8, CY, x0+pw+8, CY,
+      {stroke:'rgba(42,95,168,0.4)','stroke-width':'0.6','stroke-dasharray':'6,3'}));
+
+    // Finlets (small rectangles at tail)
+    const finH = ph * 0.35, finW = bodyLen * 0.08;
+    [ytop - finH, ybot].forEach(fy => {
+      const fin = el('rect', {
+        x: x0 + pw - finW, y: fy, width: finW, height: finH,
+        fill: 'rgba(4,10,20,0.8)',
+        stroke: pod.col, 'stroke-width': '0.8', opacity: '0.7'
+      });
+      g.appendChild(fin);
+    });
+
+    // ── Dimension annotations ──
+    // Length dimension (below pod)
+    const dimY = ybot + 28;
+    g.appendChild(dimArrow(x0, dimY, x0+pw, dimY, `${pod.l.toFixed(1)}m`, true));
+
+    // Diameter dimension (left of pod)
+    const dimX = x0 - 18;
+    g.appendChild(dimArrow(dimX, ytop, dimX, ybot, `∅${pod.d.toFixed(2)}m`, false));
+
+    // ── Labels ──
+    // Variant name (above)
+    g.appendChild(txt(cx, ytop-24, pod.name, {fs:'11', fill:pod.col, 'font-weight':'bold'}));
+    // Mass
+    g.appendChild(txt(cx, ytop-14, `${pod.m} kg  [EST]`, {fs:'8',fill:LABEL_COLOR}));
+    // BC
+    g.appendChild(txt(cx, ybot+52, `BC = ${pod.bc} kg/m²  [DERIVED]`, {fs:'8',fill:pod.col}));
+
+    svg.appendChild(g);
+  });
+
+  // Scale indicator
+  const scG = el('g',{});
+  scG.appendChild(line(20,225,70,225,{stroke:DIM_COLOR,'stroke-width':'1'}));
+  scG.appendChild(line(20,221,20,229,{stroke:DIM_COLOR,'stroke-width':'1'}));
+  scG.appendChild(line(70,221,70,229,{stroke:DIM_COLOR,'stroke-width':'1'}));
+  scG.appendChild(txt(45,220,'1.0 m',{fs:'8',fill:DIM_COLOR}));
+  scG.appendChild(txt(45,232,'SCALE 1:50',{fs:'7',fill:DIM_COLOR}));
+  svg.appendChild(scG);
+})();
+
+/* ═══════════════════════════════════════════════════════
+   US STANDARD ATMOSPHERE 1976  (inline)
+   Ref: NOAA/NASA/USAF 1976 — same layers as Python sim
+══════════════════════════════════════════════════════ */
+const ATM = [
+  [      0, 288.15, -0.0065, 101325.0   ],
+  [ 11000,  216.65,  0.0000,  22632.1   ],
+  [ 20000,  216.65,  0.0010,   5474.89  ],
+  [ 32000,  228.65,  0.0028,    868.019 ],
+  [ 47000,  270.65,  0.0000,    110.906 ],
+  [ 51000,  270.65, -0.0028,     66.9389],
+  [ 71000,  214.65, -0.0020,      3.95642],
+  [ 86000,  186.87,  0.0000,      0.37338],
+];
+const R_AIR=287.058, G0=9.80665, GAMMA=1.4, R_EARTH=6371000;
+
+function atmoTemp(h) {
+  h = Math.max(h, 0);
+  if (h >= 86000) return ATM[7][1];
+  for (let i = ATM.length-1; i >= 0; i--)
+    if (h >= ATM[i][0]) return ATM[i][1] + ATM[i][2]*(h - ATM[i][0]);
+  return ATM[0][1];
+}
+
+function atmoPressure(h) {
+  h = Math.max(h, 0);
+  if (h >= 86000) {
+    const [hb,Tb,,Pb] = ATM[7];
+    return Pb * Math.exp(-G0*(h-hb)/(R_AIR*Tb));
+  }
+  for (let i = ATM.length-1; i >= 0; i--) {
+    const [hb,Tb,Lb,Pb] = ATM[i];
+    if (h >= hb) {
+      if (Math.abs(Lb) < 1e-12)
+        return Pb * Math.exp(-G0*(h-hb)/(R_AIR*Tb));
+      else {
+        const T = Tb + Lb*(h-hb);
+        return Pb * Math.pow(T/Tb, -G0/(Lb*R_AIR));
+      }
+    }
+  }
+  return ATM[0][3];
+}
+
+function atmoDensity(h)     { return atmoPressure(h)/(R_AIR*atmoTemp(h)); }
+function atmoSound(h)       { return Math.sqrt(GAMMA*R_AIR*atmoTemp(h)); }
+function grav(h)            { const r=R_EARTH+Math.max(h,0); return G0*(R_EARTH/r)**2; }
+
+/* ═══════════════════════════════════════════════════════
+   RK4 TRAJECTORY SIMULATOR
+══════════════════════════════════════════════════════ */
+function derivs([x,z,vx,vz], bc) {
+  const h = Math.max(z, 0);
+  const v = Math.sqrt(vx*vx + vz*vz);
+  const rho = atmoDensity(h);
+  const q   = 0.5 * rho * v * v;
+  const g   = grav(h);
+  const ad  = v > 0.5 ? q/bc : 0;
+  return [vx, vz, -ad*(vx/v||0), -ad*(vz/v||0) - g];
+}
+
+function rk4step(s, dt, bc) {
+  const k1 = derivs(s, bc);
+  const k2 = derivs(s.map((v,i)=>v+0.5*dt*k1[i]), bc);
+  const k3 = derivs(s.map((v,i)=>v+0.5*dt*k2[i]), bc);
+  const k4 = derivs(s.map((v,i)=>v+dt*k3[i]), bc);
+  return s.map((v,i)=>v + dt/6*(k1[i]+2*k2[i]+2*k3[i]+k4[i]));
+}
+
+// variants: [name, v_launch, bc_atmo, v01_claim, color]
+const VARIANTS_SIM = [
+  { name:'MANNA-B', v:4318,  bc:1592, v01:247,  col:'#4fc3f7' },
+  { name:'MANNA-I', v:7670,  bc:1794, v01:850,  col:'#ff9800' },
+  { name:'MANNA-H', v:10814, bc:2264, v01:1950, col:'#ef5350' },
+];
+
+function runSim(vLaunch, bc, elevDeg=30, dt=0.1) {
+  const el = elevDeg * Math.PI / 180;
+  let s = [0, 0, vLaunch*Math.cos(el), vLaunch*Math.sin(el)];
+  const pts = [];
+  let t=0, maxZ=0, maxQ=0;
+
+  while (t < 3600) {
+    const [x,z,vx,vz] = s;
+    const h = Math.max(z,0);
+    const v = Math.sqrt(vx*vx+vz*vz);
+    const q = 0.5*atmoDensity(h)*v*v;
+    if (q > maxQ) maxQ = q;
+    if (z > maxZ) maxZ = z;
+    pts.push([x, Math.max(z,0)]);
+    if (t > 2 && z <= 0) break;
+    s = rk4step(s, dt, bc);
+    t += dt;
+  }
+  return { pts, apogee: maxZ, maxQ };
+}
+
+// Pre-compute all trajectories
+let simResults = null;
+
+function computeAll() {
+  simResults = VARIANTS_SIM.map(v => {
+    const atmo   = runSim(v.v, v.bc);
+    const vacuum = runSim(v.v, 1e12); // infinite BC = no drag
+    return { ...v, atmo, vacuum };
+  });
+
+  // Update results table
+  simResults.forEach((r,i) => {
+    const ids = ['b','i','h'];
+    const id = ids[i];
+    const ap = (r.atmo.apogee/1000).toFixed(1);
+    const ef = (r.v01 / (r.atmo.apogee/1000)).toFixed(0);
+    const mq = (r.atmo.maxQ/1000).toFixed(0);
+    document.getElementById(`sim-${id}`).textContent = ap + ' km';
+    document.getElementById(`err-${id}`).textContent = ef + '×';
+    document.getElementById(`mq-${id}`).textContent = Number(mq).toLocaleString() + ' kPa';
+  });
+
+  document.getElementById('canvas-status').textContent = 'SIMULATION COMPLETE';
+  drawTraj();
+}
+
+/* ═══════════════════════════════════════════════════════
+   CANVAS RENDERER
+══════════════════════════════════════════════════════ */
+let viewMode = 'vacuum'; // 'vacuum' | 'atmo'
+
+function setMode(m) {
+  viewMode = m;
+  document.getElementById('btn-vacuum').classList.toggle('active', m==='vacuum');
+  document.getElementById('btn-atmo').classList.toggle('active', m==='atmo');
+  drawTraj();
+}
+
+function drawTraj() {
+  if (!simResults) return;
+
+  const canvas = document.getElementById('traj-canvas');
+  const rect   = canvas.getBoundingClientRect();
+  const W = canvas.parentElement.clientWidth;
+  const H = 400;
+  canvas.width  = W;
+  canvas.height = H;
+
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  const isVacuum = viewMode === 'vacuum';
+
+  // ── Scale ──
+  // vacuum: show 0–2,400 km altitude, x proportional
+  // atmo:   show 0–22 km altitude
+  const maxAlt_m = isVacuum ? 2_400_000 : 22_000;
+  const scale = (H - 60) / maxAlt_m; // px per m altitude
+
+  // Earth setup
+  const R_EARTH_PX = R_EARTH * scale;
+  const earthCY    = H + R_EARTH_PX;  // Earth center below canvas
+  const CX         = W / 2;           // horizontal centre of launch
+
+  // ── Background grid ──
+  const gridStep_m = isVacuum ? 200_000 : 2_000; // grid line spacing in metres
+  const gridStep_px = gridStep_m * scale;
+
+  ctx.strokeStyle = 'rgba(42,95,168,0.12)';
+  ctx.lineWidth   = 0.5;
+  for (let alt = 0; alt <= maxAlt_m; alt += gridStep_m) {
+    const y = H - alt * scale;
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+  }
+  const xGridStep = gridStep_px;
+  for (let x = CX % xGridStep; x < W; x += xGridStep) {
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
+  }
+
+  // ── Earth surface arc ──
+  ctx.save();
+  // Fill earth below arc
+  ctx.beginPath();
+  ctx.arc(CX, earthCY, R_EARTH_PX, 0, Math.PI*2);
+  ctx.fillStyle = '#040810';
+  ctx.fill();
+
+  // Earth surface line
+  ctx.beginPath();
+  ctx.arc(CX, earthCY, R_EARTH_PX, 0, Math.PI*2);
+  ctx.strokeStyle = '#1a3a6c';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Clip above earth
+  ctx.beginPath();
+  ctx.rect(0, 0, W, H);
+  ctx.arc(CX, earthCY, R_EARTH_PX, Math.PI, 0, true);
+  ctx.clip();
+  ctx.restore();
+
+  // ── Kármán line (100 km) — only in vacuum mode ──
+  if (isVacuum) {
+    const karmanY = H - 100_000 * scale;
+    if (karmanY >= 0 && karmanY <= H) {
+      ctx.setLineDash([8,5]);
+      ctx.strokeStyle = 'rgba(77,159,255,0.4)';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.moveTo(0, karmanY); ctx.lineTo(W, karmanY); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(77,159,255,0.5)';
+      ctx.font = '10px Share Tech Mono, monospace';
+      ctx.fillText('KÁRMÁN LINE  100 km', 8, karmanY - 5);
+    }
+  }
+
+  // ── Altitude labels ──
+  const altLabels = isVacuum
+    ? [200,400,600,800,1000,1400,1800,2200].map(k=>k*1000)
+    : [2,4,6,8,10,14,18,22].map(k=>k*1000);
+
+  ctx.fillStyle = 'rgba(90,143,191,0.7)';
+  ctx.font = '9px Share Tech Mono, monospace';
+  altLabels.forEach(alt => {
+    const y = H - alt * scale;
+    if (y < 5 || y > H-5) return;
+    ctx.fillText(isVacuum ? (alt/1000).toFixed(0)+' km' : (alt/1000).toFixed(0)+' km', 6, y-3);
+    ctx.strokeStyle = 'rgba(42,95,168,0.2)';
+    ctx.lineWidth = 0.4;
+    ctx.beginPath(); ctx.moveTo(56,y); ctx.lineTo(W,y); ctx.stroke();
+  });
+
+  // ── Draw trajectories ──
+  simResults.forEach(r => {
+    const pts = isVacuum ? r.vacuum.pts : r.atmo.pts;
+    const apogee_m = isVacuum ? r.vacuum.apogee : r.atmo.apogee;
+
+    if (pts.length < 2) return;
+
+    // Convert physics [x_m, z_m] to canvas [px, py]
+    function toCanvas(x_m, z_m) {
+      const px = CX + x_m * scale;
+      const py = H - z_m * scale;
+      return [px, py];
+    }
+
+    // Draw trajectory path
+    ctx.beginPath();
+    const [sx,sy] = toCanvas(pts[0][0], pts[0][1]);
+    ctx.moveTo(sx, sy);
+    for (let j=1; j<pts.length; j++) {
+      const [px,py] = toCanvas(pts[j][0], pts[j][1]);
+      if (py < -50) continue; // skip off-screen top
+      ctx.lineTo(px, py);
+    }
+    ctx.strokeStyle = r.col;
+    ctx.lineWidth = isVacuum ? 1.5 : 2.0;
+    ctx.shadowColor = r.col;
+    ctx.shadowBlur  = isVacuum ? 6 : 10;
+    ctx.setLineDash([]);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Apogee marker
+    const apogee_px = apogee_m * scale;
+    let apogeeX = 0;
+    // find x at apogee
+    for (let j=0; j<pts.length-1; j++) {
+      if (pts[j][1] >= apogee_m * 0.999) { apogeeX = pts[j][0]; break; }
+    }
+    const [ax, ay] = toCanvas(apogeeX, apogee_m);
+    if (ay > 0 && ay < H) {
+      ctx.fillStyle = r.col;
+      ctx.beginPath();
+      ctx.arc(ax, ay, 4, 0, Math.PI*2);
+      ctx.fill();
+
+      const label = isVacuum
+        ? r.name + '  ' + (apogee_m/1000).toFixed(0)+' km'
+        : r.name + '  ' + (apogee_m/1000).toFixed(1)+' km';
+
+      ctx.font = 'bold 10px Share Tech Mono, monospace';
+      ctx.fillStyle = r.col;
+      ctx.shadowColor = r.col;
+      ctx.shadowBlur = 8;
+      ctx.fillText(label, ax+8, ay-4);
+      ctx.shadowBlur = 0;
+    }
+  });
+
+  // ── Mode label ──
+  ctx.font = '11px Orbitron, monospace';
+  ctx.fillStyle = isVacuum ? 'rgba(255,167,38,0.7)' : 'rgba(77,159,255,0.7)';
+  ctx.fillText(isVacuum ? 'VACUUM MODEL — NO DRAG [v0.1 CLAIMS]' : 'ATMOSPHERE SIM — US STD ATM 1976 [VERIFIED]', W-8, 18);
+  ctx.textAlign = 'right';
+  ctx.textAlign = 'left';
+
+  // ── Scale bar ──
+  const barLen_m   = isVacuum ? 200_000 : 2_000;
+  const barLen_px  = barLen_m * scale;
+  const barY       = H - 14;
+  const barX0      = W - barLen_px - 16;
+  ctx.strokeStyle  = '#3a5a8c';
+  ctx.lineWidth    = 1;
+  ctx.beginPath();
+  ctx.moveTo(barX0, barY); ctx.lineTo(barX0+barLen_px, barY);
+  ctx.moveTo(barX0, barY-4); ctx.lineTo(barX0, barY+4);
+  ctx.moveTo(barX0+barLen_px, barY-4); ctx.lineTo(barX0+barLen_px, barY+4);
+  ctx.stroke();
+  ctx.fillStyle = '#3a5a8c';
+  ctx.font = '9px Share Tech Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(isVacuum ? '200 km' : '2 km', barX0+barLen_px/2, barY+13);
+  ctx.textAlign = 'left';
+}
+
+/* ═══════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════ */
+// Run simulation asynchronously so the UI renders first
+setTimeout(computeAll, 120);
+
+// Redraw canvas on resize
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => { if (current === 2) drawTraj(); }, 150);
+});
+</script>
+</body>
+</html>
