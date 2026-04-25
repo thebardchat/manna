@@ -139,7 +139,7 @@ VARIANTS: dict[str, MannaPod] = {
         mass_kg=80.0,
         diameter_m=0.40,
         cd0=0.40,
-        launch_v_ms=4_318.0,    # → v_z = 2159 m/s → 247 km vacuum apogee  [DERIVED]
+        launch_v_ms=4_319.1,    # → v_z = 2159.55 m/s → 247.00 km vacuum apogee  [DERIVED]
         v01_apogee_km=247.0,
     ),
     "Manna-I": MannaPod(
@@ -147,7 +147,7 @@ VARIANTS: dict[str, MannaPod] = {
         mass_kg=250.0,
         diameter_m=0.65,
         cd0=0.42,
-        launch_v_ms=7_670.0,    # → v_z = 3835 m/s → 850 km vacuum apogee  [DERIVED]
+        launch_v_ms=7_670.4,    # → v_z = 3835.22 m/s → 850.00 km vacuum apogee  [DERIVED]
         v01_apogee_km=850.0,
     ),
     "Manna-H": MannaPod(
@@ -155,7 +155,7 @@ VARIANTS: dict[str, MannaPod] = {
         mass_kg=800.0,
         diameter_m=1.00,
         cd0=0.45,
-        launch_v_ms=10_814.0,   # → v_z = 5407 m/s → 1950 km vacuum apogee [DERIVED]
+        launch_v_ms=10_822.8,   # → v_z = 5411.39 m/s → 1950.00 km vacuum apogee [DERIVED]
         v01_apogee_km=1_950.0,
     ),
 }
