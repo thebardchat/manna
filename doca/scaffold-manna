@@ -1,0 +1,383 @@
+#!/usr/bin/env bash
+# scaffold_manna.sh
+# One-time setup script for the manna repository.
+# Run from inside an empty manna git repo.
+#
+# Usage:
+#   cd ~/dev && git clone https://github.com/thebardchat/manna.git && cd manna
+#   bash scaffold_manna.sh
+#   git add . && git commit -m "scaffold: initial directory structure" && git push
+
+set -euo pipefail
+
+echo "[manna] scaffolding directory structure..."
+
+# Documentation
+mkdir -p docs/research
+mkdir -p docs/variants
+mkdir -p docs/subsystems
+mkdir -p docs/mission-architecture
+mkdir -p docs/interfaces
+
+# Simulation
+mkdir -p simulation/src
+mkdir -p simulation/notebooks
+mkdir -p simulation/tests
+mkdir -p simulation/data/monte_carlo_runs
+
+# Design / CAD
+mkdir -p design/geometry
+mkdir -p design/airfoils
+mkdir -p design/cad
+
+# Control systems
+mkdir -p control_systems/isolation_mr
+mkdir -p control_systems/rcs_attitude
+mkdir -p control_systems/capture_alignment
+
+# Patents / roadmap
+mkdir -p patents/MANNA-001
+mkdir -p roadmap
+
+# CI
+mkdir -p .github/workflows
+
+echo "[manna] creating placeholder files..."
+
+# Placeholder docs
+touch docs/variants/manna-h.md
+touch docs/variants/manna-i.md
+touch docs/variants/manna-b.md
+touch docs/subsystems/aeroshell.md
+touch docs/subsystems/isolation-system.md
+touch docs/subsystems/liquid-suspension.md
+touch docs/subsystems/cbm-s-capture.md
+touch docs/subsystems/beacon-comms.md
+touch docs/subsystems/cargo-cells-smcm.md
+touch docs/mission-architecture/tug-rendezvous.md
+touch docs/mission-architecture/trans-lunar-injection.md
+touch docs/mission-architecture/cargo-classification.md
+touch docs/interfaces/BGKPJR-rail-interlock.md
+touch docs/interfaces/tug-interface.md
+
+# Placeholder simulation files
+cat > simulation/src/pod_dynamics.py <<'PYEOF'
+"""
+pod_dynamics.py — 6-DOF dynamics simulator for the Manna cargo pod.
+
+Models acceleration on the BGKPJR rail, atmospheric exit, ballistic coast,
+and Tug catch geometry. Configurable per variant (H, I, B).
+
+This is a stub. Full implementation pending Phase I of the verification plan.
+"""
+
+import argparse
+
+
+VARIANTS = {
+    "H": {
+        "dry_mass_kg": 220,
+        "cargo_mass_kg": 780,
+        "rail_exit_v_mps": 6500,
+        "rail_accel_g": 75,
+        "internal_g": 100,
+        "diameter_m": 1.2,
+        "length_m": 4.2,
+    },
+    "I": {
+        "dry_mass_kg": 380,
+        "cargo_mass_kg": 460,
+        "rail_exit_v_mps": 4000,
+        "rail_accel_g": 28.4,
+        "internal_g": 5.5,
+        "diameter_m": 1.4,
+        "length_m": 4.5,
+    },
+    "B": {
+        "dry_mass_kg": 540,
+        "cargo_mass_kg": 210,
+        "rail_exit_v_mps": 2200,
+        "rail_accel_g": 8.4,
+        "internal_g": 2.5,
+        "diameter_m": 1.6,
+        "length_m": 4.5,
+    },
+}
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--variant", choices=["H", "I", "B"], required=True)
+    args = parser.parse_args()
+
+    spec = VARIANTS[args.variant]
+    print(f"Manna-{args.variant} specification:")
+    for k, v in spec.items():
+        print(f"  {k:25s} = {v}")
+    print("\nDynamics simulation: TODO (Phase I deliverable).")
+
+
+if __name__ == "__main__":
+    main()
+PYEOF
+
+# Placeholder cargo G-rating database
+cat > simulation/data/cargo_g_ratings.csv <<'CSVEOF'
+cargo_item,category,g_rating_passive,g_rating_packed,density_kg_m3,notes
+water,bulk,200,500,1000,liquid in pressurized bladder
+methane,propellant,150,400,422,cryogenic LCH4
+oxygen,propellant,150,400,1141,cryogenic LOX
+food_brick,consumables,80,200,1200,vacuum-packed sintered ration
+regolith_feedstock,bulk,100,300,2500,>5mm particle size
+structural_steel,bulk,200,500,7850,plate or stock
+mechanical_spare,electronics,30,80,7000,valves pumps bearings
+power_electronics,electronics,20,50,2500,solid-state
+avionics_with_gyros,electronics,8,20,3000,milspec rated
+spectrometer,scientific,6,15,2500,optical alignment limits
+solid_pharma,medical,30,80,1200,tablets capsules
+liquid_pharma,medical,5,12,1000,vials biologics
+plant_seeds_dormant,biological,50,150,800,dehydrated
+plant_seedlings,biological,4,8,900,living tissue
+microbial_culture,biological,3,6,1000,aqueous medium
+mammalian_cells,biological,2,4,1050,research grade
+CSVEOF
+
+# Placeholder notebooks
+touch simulation/notebooks/01_g_force_velocity_tradeoff.ipynb
+touch simulation/notebooks/02_variant_comparison.ipynb
+touch simulation/notebooks/03_isolation_design.ipynb
+touch simulation/notebooks/04_liquid_suspension_validation.ipynb
+touch simulation/notebooks/05_economic_analysis.ipynb
+
+# Tests
+cat > simulation/tests/test_pod_dynamics.py <<'PYEOF'
+"""Smoke tests for pod_dynamics.py."""
+
+from simulation.src.pod_dynamics import VARIANTS
+
+
+def test_three_variants_exist():
+    assert set(VARIANTS.keys()) == {"H", "I", "B"}
+
+
+def test_payload_fractions_in_range():
+    for v_name, spec in VARIANTS.items():
+        total = spec["dry_mass_kg"] + spec["cargo_mass_kg"]
+        fraction = spec["cargo_mass_kg"] / total
+        assert 0.15 < fraction < 0.85, f"variant {v_name} fraction {fraction} out of range"
+
+
+def test_g_attenuation_matches_design():
+    # Manna-H is unattenuated
+    assert VARIANTS["H"]["internal_g"] >= VARIANTS["H"]["rail_accel_g"]
+    # Manna-I attenuates ~5x
+    assert VARIANTS["I"]["internal_g"] < VARIANTS["I"]["rail_accel_g"] / 4
+    # Manna-B attenuates ~3x
+    assert VARIANTS["B"]["internal_g"] < VARIANTS["B"]["rail_accel_g"] / 2.5
+PYEOF
+
+# Roadmap stubs
+cat > roadmap/phase-1-mathematical-validation.md <<'MDEOF'
+# Phase I — Mathematical Validation (Months 1–3)
+
+## Deliverables
+
+- [ ] 6-DOF pod dynamics model (`simulation/src/pod_dynamics.py`)
+- [ ] Monte Carlo trajectory analysis (10k runs per variant)
+- [ ] G-force / cargo trade study notebook
+- [ ] Economic ROI analysis with sensitivity
+- [ ] Cargo G-rating database populated to 100+ entries
+- [ ] Phase I review presentation
+MDEOF
+
+cat > roadmap/phase-2-cad-prototype.md <<'MDEOF'
+# Phase II — Subsystem Design (Months 4–6)
+
+## Deliverables
+
+- [ ] Manna-H, -I, -B FreeCAD models
+- [ ] Aeroshell CFD analysis (each variant)
+- [ ] Manna-I isolation system FEA + frequency response
+- [ ] Manna-B liquid suspension fluid dynamics simulation
+- [ ] CBM-S mechanism kinematic study
+- [ ] Phase II review presentation
+MDEOF
+
+cat > roadmap/phase-3-subscale-testing.md <<'MDEOF'
+# Phase III — Integration & Mission Sim (Months 7–9)
+
+## Deliverables
+
+- [ ] End-to-end mission sim (rail through Tug catch)
+- [ ] Manifest optimizer producing variant selection
+- [ ] Tug interface ICD (interface control document)
+- [ ] Capture geometry validation
+- [ ] Phase III review presentation
+MDEOF
+
+cat > roadmap/phase-4-flight-test.md <<'MDEOF'
+# Phase IV — Hardware Prototype Path (Months 10–12)
+
+## Deliverables
+
+- [ ] Quarter-scale Manna-I shock test article (pneumatic ram test)
+- [ ] Liquid suspension benchtop demo (centrifuge to 10G)
+- [ ] Investor / collaborator presentation deck
+- [ ] Phase IV review and decision gate for hardware build
+MDEOF
+
+# Patents stub
+cat > patents/MANNA-001/README.md <<'MDEOF'
+# MANNA-001 Patent Application
+
+**Title:** Three-Variant Cargo Pod System for Electromagnetic Mass-Driver Lunar Resupply
+
+**Inventor:** Shane Brazelton
+
+**Status:** In drafting
+
+**Key claims (preliminary):**
+1. A family of cargo pods sharing aeroshell and capture interface but providing tiered acceleration tolerance via passive (Manna-H), elastomer + magnetorheological (Manna-I), and inert-fluorinated-fluid suspension (Manna-B) configurations.
+2. A method of cargo classification driving variant selection per launch via G-rating database lookup.
+3. A capture interface (CBM-S) compatible across all three variants and reusable across multiple Tug architectures.
+
+See full application text once drafted.
+MDEOF
+
+# CI workflow
+cat > .github/workflows/ci.yml <<'YMLEOF'
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+      - name: Run tests
+        run: pytest simulation/tests/
+YMLEOF
+
+# requirements.txt
+cat > requirements.txt <<'REQEOF'
+numpy>=1.24
+scipy>=1.10
+matplotlib>=3.7
+pandas>=2.0
+control>=0.9
+pytest>=7.4
+jupyter>=1.0
+REQEOF
+
+# CLAUDE.md
+cat > CLAUDE.md <<'MDEOF'
+# CLAUDE.md — manna repo context
+
+This repo is part of the BGKPJR launch architecture ecosystem. It defines and simulates
+the Manna cargo pod family (three variants) launched from the BGKPJR maglev rail.
+
+## Conventions
+
+- Match BGKPJR's directory structure and rigor.
+- All physics math must be reproducible — show the equation, then the numerical result.
+- Three variants (H, I, B) are first-class in every analysis. No bias towards one.
+- Use the cargo G-rating database (`simulation/data/cargo_g_ratings.csv`) as the single source of truth.
+- Pi before cloud. Privacy before convenience. — Pillar 4.
+
+## Current state
+
+- Design research paper complete: `docs/research/MANNA_POD_DESIGN_RESEARCH.md`
+- Phase I (mathematical validation) just starting.
+
+## Next moves (in order)
+
+1. Stand up `simulation/src/pod_dynamics.py` as a real 6-DOF integrator.
+2. Validate against the trade study numbers in the research paper.
+3. Run Monte Carlo sweeps and document deviations from nominal.
+
+## Watch for
+
+- Don't conflate Manna with Gryphon. Manna is unmanned cargo — different G profile, different rail use.
+- Don't over-engineer Manna-H. It's deliberately the dumbest of the three.
+- Manna-B's cost per kg is high — that's correct, that's the design intent. Don't optimize it down.
+MDEOF
+
+# CONTRIBUTING.md
+cat > CONTRIBUTING.md <<'MDEOF'
+# Contributing to manna
+
+Welcome. This repo follows the BGKPJR-Core-Simulations conventions. See its CONTRIBUTING.md for the master rules.
+
+## Quick rules
+
+- Match the existing code style (PEP 8, type hints encouraged).
+- Every physics calculation needs a citation or derivation.
+- Pull requests must pass CI tests.
+- All three variants (H, I, B) must be considered for any new feature unless explicitly variant-specific.
+
+## Priority areas
+
+- 6-DOF dynamics simulator
+- Monte Carlo trajectory analysis
+- Manna-I isolation system FEA
+- Manna-B liquid suspension validation
+- CBM-S capture mechanism kinematics
+MDEOF
+
+# .gitignore
+cat > .gitignore <<'GITIGNORE'
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+ENV/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Simulation outputs
+simulation/data/monte_carlo_runs/*.csv
+simulation/data/monte_carlo_runs/*.npy
+*.log
+
+# CAD temp files
+design/cad/*.FCBak
+design/cad/*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+GITIGNORE
+
+echo "[manna] scaffold complete."
+echo ""
+echo "Next steps:"
+echo "  1. Drop MANNA_POD_DESIGN_RESEARCH.md into docs/research/"
+echo "  2. Drop README.md into the repo root"
+echo "  3. Drop LICENSE (Apache-2.0) into repo root"
+echo "  4. git add . && git commit -m 'scaffold: initial structure' && git push"
+echo ""
+echo "Then start Phase I by fleshing out simulation/src/pod_dynamics.py"
