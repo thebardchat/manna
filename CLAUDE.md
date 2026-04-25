@@ -165,3 +165,4 @@ Built with Claude (Anthropic) · Runs on Raspberry Pi 5 + Pironman 5-MAX
 |------------|--------------------------------------------|--------------|
 | 2026-04-24 | Three-variant taxonomy, v0.1 memo, Munk review, Protocol v1.0 | Shane + Claude (claude.ai) |
 | 2026-04-25 | Trajectory simulator — RK4, US Std Atm 1976, all 3 variants | Shane + Claude Code |
+| 2026-04-25 | Math verification (vis-viva velocities), NASA/SpaceX HTML redesign, 32/32 tests | Shane + Claude Code |
