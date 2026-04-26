@@ -70,11 +70,33 @@ body{font-family:var(--ftech);background:var(--bg);color:var(--white);height:100
 .repo-btn::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .18s}
 .repo-btn:hover::before{opacity:1}
 .repo-btn:hover{transform:translateY(-2px)}
-.repo-manna{border-color:var(--cyan);color:var(--cyan)}.repo-manna::before{background:var(--cyan-d)}.repo-manna:hover{box-shadow:0 0 18px rgba(77,159,255,.28)}
-.repo-bgk  {border-color:var(--amber);color:var(--amber)}.repo-bgk::before{background:rgba(244,160,32,.08)}.repo-bgk:hover{box-shadow:0 0 18px rgba(244,160,32,.28)}
+.repo-manna  {border-color:var(--cyan);color:var(--cyan)}.repo-manna::before{background:var(--cyan-d)}.repo-manna:hover{box-shadow:0 0 18px rgba(77,159,255,.28)}
+.repo-bgk    {border-color:var(--amber);color:var(--amber)}.repo-bgk::before{background:rgba(244,160,32,.08)}.repo-bgk:hover{box-shadow:0 0 18px rgba(244,160,32,.28)}
+.repo-artemis{border-color:rgba(200,222,255,.45);color:rgba(200,222,255,.8)}.repo-artemis::before{background:rgba(200,222,255,.05)}.repo-artemis:hover{box-shadow:0 0 18px rgba(200,222,255,.2)}
 .sep-wrap{display:flex;align-items:center;gap:6px;margin:0 4px}
 .sep-line{width:1px;height:32px;background:var(--line-med)}
 .sep-txt{font-size:.5rem;letter-spacing:.1em;color:var(--dimmer);text-align:center}
+/* ─── Telemetry ticker ─── */
+#telem{position:fixed;bottom:52px;left:0;right:0;height:28px;background:rgba(3,7,18,.96);border-top:1px solid rgba(30,72,140,.35);overflow:hidden;display:flex;align-items:center;z-index:99}
+.telem-dot{width:5px;height:5px;border-radius:50%;background:var(--amber);box-shadow:0 0 5px var(--amber);animation:tpulse 2s ease-in-out infinite;flex-shrink:0;margin:0 .6rem 0 .9rem}
+@keyframes tpulse{0%,100%{opacity:1}50%{opacity:.35}}
+.ttrack{display:inline-flex;align-items:center;white-space:nowrap;animation:tscroll 85s linear infinite;height:28px}
+.ttrack:hover{animation-play-state:paused}
+@keyframes tscroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.ti{font-family:var(--ftech);font-size:.57rem;letter-spacing:.08em;color:var(--dimmer);padding:0 1.8rem;border-left:1px solid rgba(30,72,140,.18)}
+.ti .tl{color:var(--cyan)}.ti .tg{color:var(--amber)}.ti .tv{color:var(--green)}.ti .tr{color:var(--red)}
+/* ─── Sheet 05 ecosystem ─── */
+.eco-chain{display:flex;align-items:center;gap:8px;margin:14px 0;flex-wrap:wrap}
+.eco-node{background:rgba(3,8,18,.8);border:1px solid var(--line-dim);padding:12px 14px;flex:1;min-width:120px}
+.eco-node.eco-manna{border-color:var(--cyan)}.eco-node.eco-bgk{border-color:var(--amber)}.eco-node.eco-moon{border-color:rgba(200,222,255,.3)}
+.eco-label{font-family:var(--fdisplay);font-size:.85rem;font-weight:900;letter-spacing:.1em;margin-bottom:3px}
+.eco-manna .eco-label{color:var(--cyan)}.eco-bgk .eco-label{color:var(--amber)}.eco-tug .eco-label{color:var(--dim)}.eco-moon .eco-label{color:rgba(200,222,255,.7)}
+.eco-sub{font-family:var(--fhead);font-weight:700;font-size:.58rem;letter-spacing:.1em;color:var(--white);margin-bottom:5px;text-transform:uppercase}
+.eco-spec{font-family:var(--ftech);font-size:.52rem;color:var(--dim);line-height:1.6}
+.eco-arrow{font-family:var(--ftech);font-size:1rem;color:var(--dimmer);flex-shrink:0;padding:0 2px}
+.eco-card{background:rgba(3,8,18,.7);border:1px solid var(--line-dim);padding:14px 16px;display:flex;flex-direction:column}
+.eco-card-title{font-family:var(--fhead);font-weight:700;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:7px}
+.eco-card-body{font-family:var(--ftech);font-size:.6rem;color:var(--dim);line-height:1.7;flex:1;margin-bottom:10px}
 /* ─── Sheet 01 pods ─── */
 .pod-wrap{background:rgba(3,8,18,.7);border:1px solid var(--line-med);padding:28px 16px 14px;margin-bottom:18px;position:relative;overflow:hidden}
 .pod-wrap::before{content:'SIDE ELEVATION  —  SCALE 1 : 50  (APPROX)';position:absolute;top:8px;left:12px;font-size:.48rem;letter-spacing:.14em;color:var(--dimmer)}
@@ -120,6 +142,7 @@ body{font-family:var(--ftech);background:var(--bg);color:var(--white);height:100
 .anim-ctrl{display:flex;align-items:center;gap:14px;margin-bottom:7px;flex-wrap:wrap}
 .anim-lbl{font-family:var(--fmono);font-size:.56rem;color:var(--dim);letter-spacing:.07em}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px}
+#vp{position:fixed;inset:0 0 80px 0;overflow:hidden}
 #nav{position:fixed;bottom:0;left:0;right:0;height:52px;background:rgba(3,7,16,.97);border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:100;backdrop-filter:blur(8px)}
 .nbtn{display:flex;align-items:center;gap:7px;background:transparent;border:1px solid var(--line);color:var(--dim);font-family:var(--fhead);font-weight:700;font-size:.6rem;letter-spacing:.16em;padding:7px 16px;cursor:pointer;transition:all .18s;min-width:90px}
 .nbtn:hover:not(:disabled){border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 12px rgba(77,159,255,.2)}
@@ -164,9 +187,13 @@ body{font-family:var(--ftech);background:var(--bg);color:var(--white);height:100
         Manna Repo →
       </a>
       <div class="sep-wrap"><div class="sep-line"></div><span class="sep-txt">SEPARATE<br>PROJECT</span><div class="sep-line"></div></div>
-      <a href="https://github.com/thebardchat/BGKPJR-Core-Simulations" target="_blank" rel="noopener" class="repo-btn repo-bgk">
+      <a href="https://thebardchat.github.io/BGKPJR-Core-Simulations/" target="_blank" rel="noopener" class="repo-btn repo-bgk">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-        BGKPJR Repo →
+        BGKPJR →
+      </a>
+      <div class="sep-wrap"><div class="sep-line"></div><span class="sep-txt">MISSION<br>CONTEXT</span><div class="sep-line"></div></div>
+      <a href="https://thebardchat.github.io/artemis/" target="_blank" rel="noopener" class="repo-btn repo-artemis">
+        ★ Artemis →
       </a>
     </div>
   </div>
@@ -174,10 +201,10 @@ body{font-family:var(--ftech);background:var(--bg);color:var(--white);height:100
     <tr><td colspan="2" class="big">MANNA</td></tr>
     <tr><td class="lbl">Drawing</td><td class="val">MNP-000</td></tr>
     <tr><td class="lbl">Title</td><td class="val">Index / Cover Sheet</td></tr>
-    <tr><td class="lbl">Sheets</td><td class="val">00 – 03</td></tr>
-    <tr><td class="lbl">Date</td><td class="val">2026-04-25</td></tr>
+    <tr><td class="lbl">Sheets</td><td class="val">00 – 05</td></tr>
+    <tr><td class="lbl">Date</td><td class="val">2026-04-26</td></tr>
     <tr><td class="lbl">Drawn</td><td class="val">S. Brazelton + Claude</td></tr>
-    <tr><td class="lbl">Sheet</td><td class="val">00 of 03</td></tr>
+    <tr><td class="lbl">Sheet</td><td class="val">00 of 05</td></tr>
   </table></div>
 </div>
 </div>
@@ -417,7 +444,110 @@ body{font-family:var(--ftech);background:var(--bg);color:var(--white);height:100
 </div>
 </div>
 
+
+<!-- ══════════════════════════ SHEET 05 — ECOSYSTEM ══ -->
+<div class="sheet right bp-paper" id="s5">
+<div class="inner">
+  <div class="sh-hdr">
+    <span class="sh-drw">DWG MNP-005  |  REV 0.2</span>
+    <span class="sh-title">Sheet 05 — Mission Context · Ecosystem</span>
+  </div>
+  <div style="font-family:var(--fmono);font-size:.58rem;letter-spacing:.18em;color:var(--dimmer);margin-bottom:14px">PROJECT MANNA WITHIN THE LARGER EARTH-TO-MOON SUPPLY CHAIN</div>
+
+  <div class="eco-chain">
+    <div class="eco-node eco-manna">
+      <div class="eco-label">MANNA</div>
+      <div class="eco-sub">EM Cargo Pods</div>
+      <div class="eco-spec">3 variants · H/I/B<br>80–800 kg payload<br>this document</div>
+    </div>
+    <div class="eco-arrow">→</div>
+    <div class="eco-node eco-bgk">
+      <div class="eco-label">BGKPJR</div>
+      <div class="eco-sub">EM Rail Launch</div>
+      <div class="eco-spec">12 km tunnel · 20g<br>1,200–1,700 m/s ΔV<br>VacuumGate IP</div>
+    </div>
+    <div class="eco-arrow">→</div>
+    <div class="eco-node" style="border-color:var(--line-dim)">
+      <div class="eco-label" style="color:var(--dim)">SPACE TUG</div>
+      <div class="eco-sub">LEO Relay</div>
+      <div class="eco-spec">400 km orbit<br>permanent delivery-van<br>Blue Origin / NASA</div>
+    </div>
+    <div class="eco-arrow">→</div>
+    <div class="eco-node eco-moon">
+      <div class="eco-label">ARTEMIS</div>
+      <div class="eco-sub">Lunar Surface</div>
+      <div class="eco-spec">Blue Moon Mk2 lander<br>South Pole colony<br>pods = radiation walls</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px">
+    <div class="eco-card">
+      <div class="eco-card-title" style="color:var(--amber)">BGKPJR Core Simulations</div>
+      <div class="eco-card-body">
+        The electromagnetic rail launch system. 12 km unmanned maglev tunnel. NbTi
+        superconducting coils. VacuumGate LH₂ exit membrane (patent filed). Space Tug
+        rendezvous. Python RK4 physics published. Artemis engineer validated.
+      </div>
+      <a href="https://thebardchat.github.io/BGKPJR-Core-Simulations/" target="_blank" rel="noopener" class="repo-btn repo-bgk" style="font-size:.58rem;padding:7px 14px">BGKPJR Showcase →</a>
+    </div>
+    <div class="eco-card">
+      <div class="eco-card-title" style="color:rgba(200,222,255,.8)">Artemis Program Showcase</div>
+      <div class="eco-card-body">
+        NASA's return to the Moon. Artemis II splashed down April 10 2026 — first humans around
+        the Moon since Apollo 17 (Dec 1972). Distance record: 406,771 km. Artemis IV will land
+        the first crewed South Pole mission. BGKPJR + Manna supply the colony that follows.
+      </div>
+      <a href="https://thebardchat.github.io/artemis/" target="_blank" rel="noopener" class="repo-btn repo-artemis" style="font-size:.58rem;padding:7px 14px">★ Artemis Showcase →</a>
+    </div>
+  </div>
+
+  <div class="alert-box-blue" style="margin-top:16px">
+    <strong>MANNA's role:</strong>
+    Manna-H delivers bulk cargo, food, construction material, and radiation shielding panels (100g rated).
+    Manna-I delivers precision instruments, electronics, and scientific payloads (5.5g rated).
+    Manna-B delivers biological material — seeds, medicine, samples — with shock isolation (2.5g rated).
+    Each delivered pod stacks as structural shielding. <strong>The pods become the walls.</strong>
+    See Sheet 03 for RK4 atmospheric trajectory analysis — v0.1 vacuum claims are superseded.
+  </div>
+
+  <div class="pad-bot"></div>
+  <div class="tb"><table>
+    <tr><td colspan="2" class="big">MANNA</td></tr>
+    <tr><td class="lbl">Drawing</td><td class="val">MNP-005</td></tr>
+    <tr><td class="lbl">Title</td><td class="val">Mission Context / Ecosystem</td></tr>
+    <tr><td class="lbl">Date</td><td class="val">2026-04-26</td></tr>
+    <tr><td class="lbl">Drawn</td><td class="val">S. Brazelton + Claude</td></tr>
+    <tr><td class="lbl">Sheet</td><td class="val">05 of 05</td></tr>
+  </table></div>
+</div>
+</div>
+
 </div><!-- /vp -->
+
+<!-- TELEMETRY TICKER -->
+<div id="telem">
+  <div class="telem-dot"></div>
+  <div class="ttrack">
+    <span class="ti">MANNA <span class="tl">EM CARGO PODS</span> · 3 variants · H / I / B · 80–800 kg payload</span>
+    <span class="ti">MANNA-H <span class="tr">100g RATED</span> · bulk cargo · construction · radiation shielding panels</span>
+    <span class="ti">MANNA-I <span class="tl">5.5g RATED</span> · instruments · electronics · scientific payloads</span>
+    <span class="ti">MANNA-B <span class="tv">2.5g RATED</span> · biologics · seeds · medicine · FC-770 shock isolation</span>
+    <span class="ti">TRAJECTORY <span class="tr">v0.1 SUPERSEDED</span> · RK4 atm sim: 4–9 km apogee (not 247–1,950 km vacuum)</span>
+    <span class="ti">BGKPJR RAIL <span class="tg">12 km · 20g · 1,200–1,700 m/s ΔV</span> · VacuumGate IP · patent filed</span>
+    <span class="ti">ARTEMIS II <span class="tl">MISSION COMPLETE</span> · splashdown April 10 2026 · 406,771 km distance record</span>
+    <span class="ti">MISSION <span class="tl">EARTH → MOON</span> · rail launch → Space Tug → Blue Moon Mk2 → South Pole colony</span>
+    <span class="ti">BUILT BY <span class="tg">Shane Brazelton + Claude Anthropic</span> · Hazel Green, AL · claude.ai/referral/4fAMYN9Ing</span>
+    <span class="ti">MANNA <span class="tl">EM CARGO PODS</span> · 3 variants · H / I / B · 80–800 kg payload</span>
+    <span class="ti">MANNA-H <span class="tr">100g RATED</span> · bulk cargo · construction · radiation shielding panels</span>
+    <span class="ti">MANNA-I <span class="tl">5.5g RATED</span> · instruments · electronics · scientific payloads</span>
+    <span class="ti">MANNA-B <span class="tv">2.5g RATED</span> · biologics · seeds · medicine · FC-770 shock isolation</span>
+    <span class="ti">TRAJECTORY <span class="tr">v0.1 SUPERSEDED</span> · RK4 atm sim: 4–9 km apogee (not 247–1,950 km vacuum)</span>
+    <span class="ti">BGKPJR RAIL <span class="tg">12 km · 20g · 1,200–1,700 m/s ΔV</span> · VacuumGate IP · patent filed</span>
+    <span class="ti">ARTEMIS II <span class="tl">MISSION COMPLETE</span> · splashdown April 10 2026 · 406,771 km distance record</span>
+    <span class="ti">MISSION <span class="tl">EARTH → MOON</span> · rail launch → Space Tug → Blue Moon Mk2 → South Pole colony</span>
+    <span class="ti">BUILT BY <span class="tg">Shane Brazelton + Claude Anthropic</span> · Hazel Green, AL · claude.ai/referral/4fAMYN9Ing</span>
+  </div>
+</div>
 
 <!-- ══ NAV BAR ══ -->
 <div id="nav">
@@ -429,24 +559,25 @@ body{font-family:var(--ftech);background:var(--bg);color:var(--white);height:100
     <div class="dot"    id="d2" onclick="go(2)"></div>
     <div class="dot"    id="d3" onclick="go(3)"></div>
     <div class="dot"    id="d4" onclick="go(4)"></div>
+    <div class="dot"    id="d5" onclick="go(5)"></div>
   </div>
   <button class="nbtn nbtn-r" id="bnn" onclick="next()">Next →</button>
 </div>
 
 <script>
 /* ══ NAVIGATION ══ */
-const SHEETS=['s0','s1','s2','s3','s4'];
+const SHEETS=['s0','s1','s2','s3','s4','s5'];
 let cur=0;
 function go(n){
   const p=cur;
-  cur=Math.max(0,Math.min(n,4));
+  cur=Math.max(0,Math.min(n,5));
   if(p===cur)return;
   const dir=cur>p?1:-1;
   document.getElementById(SHEETS[p]).className='sheet bp-paper '+(dir>0?'left':'right');
   document.getElementById(SHEETS[cur]).className='sheet bp-paper on';
   document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('on',i===cur));
   document.getElementById('bnp').disabled=cur===0;
-  document.getElementById('bnn').disabled=cur===4;
+  document.getElementById('bnn').disabled=cur===5;
   if(cur===3)requestAnimationFrame(drawTraj);
   if(cur===4)startAnimations();
   else stopAnimations();

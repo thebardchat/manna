@@ -58,7 +58,7 @@ body{
 #vp{
   position:relative;
   width:100vw;
-  height:calc(100vh - 52px);
+  height:calc(100vh - 80px);
   overflow:hidden;
 }
 .sheet{
@@ -168,15 +168,27 @@ body{
 .repo-btn::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .18s}
 .repo-btn:hover::before{opacity:1}
 .repo-btn:hover{transform:translateY(-2px)}
-.repo-manna{border-color:var(--cyan);color:var(--cyan)}
+.repo-manna  {border-color:var(--cyan);color:var(--cyan)}
 .repo-manna::before{background:var(--cyan-d)}
 .repo-manna:hover{box-shadow:0 0 18px rgba(77,159,255,.28)}
-.repo-bgk  {border-color:var(--amber);color:var(--amber)}
+.repo-bgk    {border-color:var(--amber);color:var(--amber)}
 .repo-bgk::before{background:rgba(244,160,32,.08)}
 .repo-bgk:hover{box-shadow:0 0 18px rgba(244,160,32,.28)}
+.repo-artemis{border-color:rgba(200,222,255,.45);color:rgba(200,222,255,.8)}
+.repo-artemis::before{background:rgba(200,222,255,.05)}
+.repo-artemis:hover{box-shadow:0 0 18px rgba(200,222,255,.2)}
 .sep-wrap{display:flex;align-items:center;gap:6px;margin:0 4px}
 .sep-line{width:1px;height:32px;background:var(--line-med)}
 .sep-txt{font-size:.5rem;letter-spacing:.1em;color:var(--dimmer);text-align:center}
+/* telemetry ticker */
+#telem{position:fixed;bottom:52px;left:0;right:0;height:28px;background:rgba(3,7,18,.96);border-top:1px solid rgba(30,72,140,.35);overflow:hidden;display:flex;align-items:center;z-index:99}
+.telem-dot{width:5px;height:5px;border-radius:50%;background:var(--amber);box-shadow:0 0 5px var(--amber);animation:tpulse 2s ease-in-out infinite;flex-shrink:0;margin:0 .6rem 0 .9rem}
+@keyframes tpulse{0%,100%{opacity:1}50%{opacity:.35}}
+.ttrack{display:inline-flex;align-items:center;white-space:nowrap;animation:tscroll 85s linear infinite;height:28px}
+.ttrack:hover{animation-play-state:paused}
+@keyframes tscroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.ti{font-family:var(--ftech);font-size:.57rem;letter-spacing:.08em;color:var(--dimmer);padding:0 1.8rem;border-left:1px solid rgba(30,72,140,.18)}
+.ti .tl{color:var(--cyan)}.ti .tg{color:var(--amber)}.ti .tv{color:var(--green)}.ti .tr{color:var(--red)}
 
 /* ───────────────────────────────────────────── SHEET 01 PODS */
 .pod-wrap{
@@ -360,10 +372,19 @@ body{
         <span class="sep-txt">SEPARATE<br>PROJECT</span>
         <div class="sep-line"></div>
       </div>
-      <a href="https://github.com/thebardchat/BGKPJR-Core-Simulations" target="_blank" rel="noopener"
+      <a href="https://thebardchat.github.io/BGKPJR-Core-Simulations/" target="_blank" rel="noopener"
          class="repo-btn repo-bgk">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-        BGKPJR Repo →
+        BGKPJR →
+      </a>
+      <div class="sep-wrap">
+        <div class="sep-line"></div>
+        <span class="sep-txt">MISSION<br>CONTEXT</span>
+        <div class="sep-line"></div>
+      </div>
+      <a href="https://thebardchat.github.io/artemis/" target="_blank" rel="noopener"
+         class="repo-btn repo-artemis">
+        ★ Artemis →
       </a>
     </div>
   </div>
@@ -569,6 +590,31 @@ body{
 </div>
 
 </div><!-- /vp -->
+
+<!-- TELEMETRY TICKER -->
+<div id="telem">
+  <div class="telem-dot"></div>
+  <div class="ttrack">
+    <span class="ti">MANNA <span class="tl">EM CARGO PODS</span> · 3 variants · H / I / B · 80–800 kg payload</span>
+    <span class="ti">MANNA-H <span class="tr">100g RATED</span> · bulk cargo · construction · radiation shielding panels</span>
+    <span class="ti">MANNA-I <span class="tl">5.5g RATED</span> · instruments · electronics · scientific payloads</span>
+    <span class="ti">MANNA-B <span class="tv">2.5g RATED</span> · biologics · seeds · medicine · FC-770 shock isolation</span>
+    <span class="ti">TRAJECTORY <span class="tr">v0.1 SUPERSEDED</span> · RK4 atm sim: 4–9 km apogee (not 247–1,950 km vacuum)</span>
+    <span class="ti">BGKPJR RAIL <span class="tg">12 km · 20g · 1,200–1,700 m/s ΔV</span> · VacuumGate IP · patent filed</span>
+    <span class="ti">ARTEMIS II <span class="tl">MISSION COMPLETE</span> · splashdown April 10 2026 · 406,771 km distance record</span>
+    <span class="ti">MISSION <span class="tl">EARTH → MOON</span> · rail launch → Space Tug → Blue Moon Mk2 → South Pole colony</span>
+    <span class="ti">BUILT BY <span class="tg">Shane Brazelton + Claude Anthropic</span> · Hazel Green, AL · claude.ai/referral/4fAMYN9Ing</span>
+    <span class="ti">MANNA <span class="tl">EM CARGO PODS</span> · 3 variants · H / I / B · 80–800 kg payload</span>
+    <span class="ti">MANNA-H <span class="tr">100g RATED</span> · bulk cargo · construction · radiation shielding panels</span>
+    <span class="ti">MANNA-I <span class="tl">5.5g RATED</span> · instruments · electronics · scientific payloads</span>
+    <span class="ti">MANNA-B <span class="tv">2.5g RATED</span> · biologics · seeds · medicine · FC-770 shock isolation</span>
+    <span class="ti">TRAJECTORY <span class="tr">v0.1 SUPERSEDED</span> · RK4 atm sim: 4–9 km apogee (not 247–1,950 km vacuum)</span>
+    <span class="ti">BGKPJR RAIL <span class="tg">12 km · 20g · 1,200–1,700 m/s ΔV</span> · VacuumGate IP · patent filed</span>
+    <span class="ti">ARTEMIS II <span class="tl">MISSION COMPLETE</span> · splashdown April 10 2026 · 406,771 km distance record</span>
+    <span class="ti">MISSION <span class="tl">EARTH → MOON</span> · rail launch → Space Tug → Blue Moon Mk2 → South Pole colony</span>
+    <span class="ti">BUILT BY <span class="tg">Shane Brazelton + Claude Anthropic</span> · Hazel Green, AL · claude.ai/referral/4fAMYN9Ing</span>
+  </div>
+</div>
 
 <!-- ═══════════════════════════════════════════════ NAV BAR -->
 <div id="nav">
