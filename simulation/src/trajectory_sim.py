@@ -40,6 +40,12 @@ G0:      float = 9.80665        # m/s²— standard gravity (sea level)
 GAMMA:   float = 1.4            # specific heat ratio, dry air
 R_AIR:   float = 287.058        # J/(kg·K) — gas constant, dry air
 
+# Sutton-Graves stagnation heating  [CONSTRAINT-NOT-MODELED — no CFD/geometry yet]
+# q_dot = SUTTON_GRAVES_K × sqrt(ρ / R_NOSE) × v³   [W/m²]
+# Ref: Sutton & Graves, A General Stagnation-Point Convective Heating Equation (1959)
+SUTTON_GRAVES_K: float = 1.83e-4   # W·s³·kg^-0.5·m^-0.5  [VERIFIED: Sutton & Graves]
+NOSE_RADIUS_M:   float = 0.05       # m — assumed nose radius; no geometry defined  [ESTIMATE]
+
 
 # ---------------------------------------------------------------------------
 # US Standard Atmosphere 1976 — inline implementation
@@ -190,14 +196,20 @@ class SimResult:
     elevation_deg:    float
     azimuth_deg:      float
     points:           List[TrajPoint] = field(default_factory=list)
-    apogee_km:        float = 0.0
-    apogee_range_km:  float = 0.0
-    max_q_pa:         float = 0.0
-    max_q_alt_km:     float = 0.0
-    max_mach:         float = 0.0
-    impact_range_km:  float = 0.0
-    impact_time_s:    float = 0.0
-    orbital_flag:     bool  = False  # True if vx > circular orbital v at any point above 100 km
+    apogee_km:           float = 0.0
+    apogee_range_km:     float = 0.0
+    max_q_pa:            float = 0.0
+    max_q_alt_km:        float = 0.0
+    max_mach:            float = 0.0
+    impact_range_km:     float = 0.0
+    impact_time_s:       float = 0.0
+    orbital_flag:        bool  = False  # vx > v_circ above 100 km at any point
+    # Apogee orbital analysis  [DERIVED]
+    vx_at_apogee:        float = 0.0   # m/s — horizontal speed at apogee
+    v_circ_at_apogee:    float = 0.0   # m/s — circular orbital speed at apogee altitude
+    orbital_at_apogee:   bool  = False  # vx_at_apogee ≥ v_circ_at_apogee
+    # Stagnation heating  [CONSTRAINT-NOT-MODELED — Sutton-Graves, assumed R_nose=5 cm]
+    peak_heat_flux_W_m2: float = 0.0   # W/m² peak stagnation heat flux (launch phase)
 
     @property
     def arrays(self) -> dict:
@@ -318,35 +330,44 @@ def simulate(
     state = np.array([0.0, 0.0, vx0, vz0])
     result = SimResult(variant=pod, elevation_deg=elevation_deg, azimuth_deg=azimuth_deg)
 
-    t         = 0.0
-    apogee_z  = 0.0
-    apogee_x  = 0.0
-    max_q     = 0.0
-    max_q_alt = 0.0
+    t               = 0.0
+    apogee_z        = 0.0
+    apogee_x        = 0.0
+    apogee_vx       = vx0   # horizontal velocity at apogee; updated when z is max
+    max_q           = 0.0
+    max_q_alt       = 0.0
+    peak_heat_flux  = 0.0
 
     while t < t_max:
         x, z, vx, vz = state
-        alt  = max(z, 0.0)
-        v    = math.hypot(vx, vz)
-        rho  = atmo_density(alt)
+        alt   = max(z, 0.0)
+        v     = math.hypot(vx, vz)
+        rho   = atmo_density(alt)
         a_snd = atmo_speed_of_sound(alt)
-        mach = v / a_snd if a_snd > 0.0 else 0.0
-        q    = 0.5 * rho * v * v
-        g    = gravity(alt)
+        mach  = v / a_snd if a_snd > 0.0 else 0.0
+        q     = 0.5 * rho * v * v
+        g     = gravity(alt)
 
-        # Orbital check: flag if horizontal speed exceeds circular orbital v above Karman line
+        # Orbital check: flag if horizontal speed exceeds circular orbital v above Kármán line
         if alt > 100_000.0 and vx > circular_orbital_velocity(alt):
             result.orbital_flag = True
+
+        # Sutton-Graves stagnation heat flux  [CONSTRAINT-NOT-MODELED]
+        if rho > 0.0 and v > 0.0:
+            hf = SUTTON_GRAVES_K * math.sqrt(rho / NOSE_RADIUS_M) * v ** 3
+            if hf > peak_heat_flux:
+                peak_heat_flux = hf
 
         # Store trajectory point
         pt = TrajPoint(t=t, x=x, z=z, vx=vx, vz=vz,
                        rho=rho, q=q, mach=mach, g_accel=g)
         result.points.append(pt)
 
-        # Apogee tracking
+        # Apogee tracking — record vx at the highest point
         if z > apogee_z:
-            apogee_z = z
-            apogee_x = x
+            apogee_z  = z
+            apogee_x  = x
+            apogee_vx = vx
 
         # Max-Q tracking
         if q > max_q:
@@ -357,15 +378,36 @@ def simulate(
         if t > 2.0 and z <= 0.0:
             break
 
-        state = _rk4_step(state, dt, pod)
-        t += dt
+        # Termination: pod stopped by drag (physical — very-low-BC case)
+        # Prevents RK4 blow-up when drag decel >> launch velocity / dt
+        if t > 0.5 and v < 1.0:
+            break
+
+        # Adaptive sub-step: if drag can stop the pod in < dt, use smaller step
+        # Prevents RK4 blow-up when drag decel >> launch_v / dt  (very-low-BC cases)
+        _v_cur   = v  # already computed above
+        _dt_step = dt
+        if _v_cur > 1.0:
+            _bc_now  = pod.mass_kg / (cd_mach_correction(pod.cd0, mach) * pod.frontal_area)
+            _q_now   = q
+            _a_drag  = _q_now / _bc_now if _bc_now > 0 else 0.0
+            if _a_drag > 0:
+                _t_stop  = _v_cur / _a_drag             # time to stop at current decel
+                _dt_step = min(dt, _t_stop * 0.25)     # take ≤ 25% of stopping time
+
+        state = _rk4_step(state, _dt_step, pod)
+        t += _dt_step
 
     # Final derived statistics
-    result.apogee_km       = apogee_z / 1000.0
-    result.apogee_range_km = apogee_x / 1000.0
-    result.max_q_pa        = max_q
-    result.max_q_alt_km    = max_q_alt / 1000.0
-    result.max_mach        = max((p.mach for p in result.points), default=0.0)
+    result.apogee_km             = apogee_z / 1000.0
+    result.apogee_range_km       = apogee_x / 1000.0
+    result.max_q_pa              = max_q
+    result.max_q_alt_km          = max_q_alt / 1000.0
+    result.max_mach              = max((p.mach for p in result.points), default=0.0)
+    result.vx_at_apogee          = apogee_vx
+    result.v_circ_at_apogee      = circular_orbital_velocity(apogee_z)
+    result.orbital_at_apogee     = apogee_vx >= result.v_circ_at_apogee and apogee_z > 0.0
+    result.peak_heat_flux_W_m2   = peak_heat_flux
 
     if result.points:
         last = result.points[-1]
@@ -447,14 +489,18 @@ def print_summary(results: List[SimResult]) -> None:
     """Print comparison table: v0.1 paper claims vs. simulator results."""
     cols = (
         f"{'Variant':<12} "
-        f"{'v0.1 claim (km)':>16} "
-        f"{'Sim apogee (km)':>16} "
-        f"{'Delta (km)':>11} "
-        f"{'Sim/v0.1':>9} "
-        f"{'Max-Q (kPa)':>12} "
-        f"{'Max Mach':>9} "
-        f"{'BC (kg/m²)':>11} "
-        f"{'Orbital':>8}"
+        f"{'v0.1 (km)':>10} "
+        f"{'Sim (km)':>10} "
+        f"{'Delta':>8} "
+        f"{'Ratio':>7} "
+        f"{'MaxQ kPa':>9} "
+        f"{'Mach':>6} "
+        f"{'BC kg/m²':>9} "
+        f"{'vx@apo':>8} "
+        f"{'vcirc':>8} "
+        f"{'vx/vc':>6} "
+        f"{'PkHF GW/m²':>11} "
+        f"{'OrbFlag':>8}"
     )
     sep = "=" * len(cols)
 
@@ -467,23 +513,31 @@ def print_summary(results: List[SimResult]) -> None:
     print("-" * len(cols))
 
     for res in results:
-        v01   = res.variant.v01_apogee_km
-        sim   = res.apogee_km
-        delta = sim - v01
-        ratio = sim / v01 if v01 > 0 else float("nan")
-        maxq  = res.max_q_pa / 1000.0
-        orb   = "YES ⚠" if res.orbital_flag else "no"
-        bc    = res.variant.ballistic_coefficient
+        v01      = res.variant.v01_apogee_km
+        sim      = res.apogee_km
+        delta    = sim - v01
+        ratio    = sim / v01 if v01 > 0 else float("nan")
+        maxq     = res.max_q_pa / 1000.0
+        bc       = res.variant.ballistic_coefficient
+        vx_apo   = res.vx_at_apogee
+        vc_apo   = res.v_circ_at_apogee
+        vx_ratio = vx_apo / vc_apo if vc_apo > 0 else 0.0
+        hf_gw    = res.peak_heat_flux_W_m2 / 1e9
+        orb      = "YES ⚠" if res.orbital_flag else "no"
 
         print(
             f"{res.variant.name:<12} "
-            f"{v01:>16.1f} "
-            f"{sim:>16.1f} "
-            f"{delta:>+11.1f} "
-            f"{ratio:>9.3f} "
-            f"{maxq:>12.1f} "
-            f"{res.max_mach:>9.1f} "
-            f"{bc:>11.0f} "
+            f"{v01:>10.1f} "
+            f"{sim:>10.1f} "
+            f"{delta:>+8.1f} "
+            f"{ratio:>7.3f} "
+            f"{maxq:>9.1f} "
+            f"{res.max_mach:>6.1f} "
+            f"{bc:>9.0f} "
+            f"{vx_apo:>8.0f} "
+            f"{vc_apo:>8.0f} "
+            f"{vx_ratio:>6.3f} "
+            f"{hf_gw:>11.2f} "
             f"{orb:>8}"
         )
 
@@ -492,7 +546,9 @@ def print_summary(results: List[SimResult]) -> None:
     print("  [DERIVED]  Sim apogee — includes US Std Atm 1976 drag + altitude-varying gravity")
     print("  [PLACEHOLDER]  v0.1 claims — vacuum, constant g₀; reproduced from vis-viva formula")
     print("  [ESTIMATE] Cd₀, mass, diameter — awaiting structural design and CFD")
-    print("  Orbital flag — horizontal v exceeded circular orbital v above Kármán line (100 km)")
+    print("  [CONSTRAINT-NOT-MODELED]  PkHF = Sutton-Graves peak stagnation heat flux; R_nose=5 cm assumed")
+    print("  vx/vc = fraction of circular orbital velocity achieved at apogee")
+    print("  OrbFlag — vx > v_circ above Kármán line at any point during flight")
     print()
 
 

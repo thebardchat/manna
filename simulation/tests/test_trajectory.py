@@ -29,6 +29,9 @@ from trajectory_sim import (
     run_sanity_check,
     VARIANTS,
     MannaPod,
+    SimResult,
+    SUTTON_GRAVES_K,
+    NOSE_RADIUS_M,
     _rk4_step,
     _derivatives,
 )
@@ -279,3 +282,58 @@ class TestElevationAngle:
         res_15 = simulate(pod, elevation_deg=15.0, dt=0.5)
         res_45 = simulate(pod, elevation_deg=45.0, dt=0.5)
         assert res_45.apogee_km > res_15.apogee_km
+
+
+# ---------------------------------------------------------------------------
+# New SimResult fields — vx_at_apogee, v_circ_at_apogee, peak heat flux
+# ---------------------------------------------------------------------------
+
+class TestNewSimResultFields:
+
+    @pytest.fixture(scope="class")
+    def result_b(self):
+        return simulate(VARIANTS["Manna-B"], elevation_deg=30.0, dt=0.5)
+
+    @pytest.fixture(scope="class")
+    def result_h(self):
+        return simulate(VARIANTS["Manna-H"], elevation_deg=30.0, dt=0.5)
+
+    def test_vx_at_apogee_positive(self, result_b):
+        """Horizontal velocity at apogee must be positive (pod still moving downrange)."""
+        assert result_b.vx_at_apogee > 0.0
+
+    def test_vx_at_apogee_less_than_launch_velocity(self, result_b):
+        """Drag reduces vx; apogee horizontal speed < launch speed."""
+        assert result_b.vx_at_apogee < VARIANTS["Manna-B"].launch_v_ms
+
+    def test_v_circ_at_apogee_physical(self, result_b):
+        """v_circ at apogee should be in the range 7–8 km/s (LEO-regime)."""
+        vc = result_b.v_circ_at_apogee
+        assert 6_000 < vc < 9_000, f"v_circ_at_apogee={vc:.0f} m/s outside [6k, 9k]"
+
+    def test_orbital_at_apogee_false_for_all_variants(self):
+        """None of the v0.1 variants achieve orbit at apogee — drag is fatal."""
+        for name, pod in VARIANTS.items():
+            res = simulate(pod, elevation_deg=30.0, dt=0.5)
+            assert not res.orbital_at_apogee, (
+                f"{name}: orbital_at_apogee should be False — "
+                f"vx={res.vx_at_apogee:.0f} m/s vs v_circ={res.v_circ_at_apogee:.0f} m/s"
+            )
+
+    def test_peak_heat_flux_enormous(self, result_h):
+        """
+        Manna-H at Mach 32 at sea level: Sutton-Graves predicts ~1 GW/m².
+        Confirms the thermal constraint is catastrophic.  [CONSTRAINT-NOT-MODELED]
+        """
+        hf_gw = result_h.peak_heat_flux_W_m2 / 1e9
+        assert hf_gw > 0.1, (
+            f"Peak heat flux {hf_gw:.2f} GW/m² unexpectedly low; check Sutton-Graves calc"
+        )
+
+    def test_peak_heat_flux_positive(self, result_b):
+        assert result_b.peak_heat_flux_W_m2 > 0.0
+
+    def test_sutton_graves_constants_physical(self):
+        """Spot-check the Sutton-Graves constant and nose radius are reasonable."""
+        assert 1e-5 < SUTTON_GRAVES_K < 1e-3
+        assert 0.01 < NOSE_RADIUS_M < 1.0

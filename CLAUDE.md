@@ -135,6 +135,10 @@ Persona Review Protocol version in use at time of writing.
 - [x] Persona Review Protocol v1.0
 - [x] Munk persona review (7 issues flagged)
 - [x] **Trajectory simulator** (`simulation/src/trajectory_sim.py`)
+- [x] **BC × Elevation parametric sweep** (`simulation/src/sweep.py`) — 108-run grid, contour plots
+- [x] **Sutton-Graves stagnation heat flux** added to SimResult (`peak_heat_flux_W_m2`)
+- [x] **Orbital analysis at apogee** (`vx_at_apogee`, `v_circ_at_apogee`, `orbital_at_apogee`)
+- [x] **Adaptive RK4 sub-stepping** — prevents blow-up under extreme drag (very-low-BC cases)
 - [ ] Fix trajectory math — re-derive apogee with atmosphere (use sim output)
 - [ ] Plane-change ΔV budget for 35°N → equatorial LEO
 - [ ] PICA-X entry/exit thermal trade study
@@ -166,3 +170,4 @@ Built with Claude (Anthropic) · Runs on Raspberry Pi 5 + Pironman 5-MAX
 | 2026-04-24 | Three-variant taxonomy, v0.1 memo, Munk review, Protocol v1.0 | Shane + Claude (claude.ai) |
 | 2026-04-25 | Trajectory simulator — RK4, US Std Atm 1976, all 3 variants | Shane + Claude Code |
 | 2026-04-25 | Math verification (vis-viva velocities), NASA/SpaceX HTML redesign, 32/32 tests | Shane + Claude Code |
+| 2026-04-25 | BC×elevation sweep (108 sims), Sutton-Graves heat flux, orbital-at-apogee, adaptive RK4, 50/50 tests | Shane + Claude Code |
