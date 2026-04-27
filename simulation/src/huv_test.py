@@ -24,6 +24,7 @@ Date:   2026-04-27
 
 from __future__ import annotations
 
+import json
 import math
 from pathlib import Path
 from typing import List
@@ -258,14 +259,56 @@ def write_markdown_summary(results: List[SimResult], out_dir: Path) -> Path:
 # Entry
 # ---------------------------------------------------------------------------
 
+def write_trajectories_json(results: List[SimResult], out_dir: Path,
+                             max_points: int = 600) -> Path:
+    """Dump downsampled (t, x_km, z_km, v) per run for browser animation."""
+    runs = []
+    for res in results:
+        a = res.arrays
+        n = len(a["t"])
+        # Stride to keep ≤ max_points per run; preserves temporal density well enough
+        stride = max(1, n // max_points)
+        runs.append({
+            "name":             res.variant.name,
+            "elevation_deg":    res.elevation_deg,
+            "mass_kg":          res.variant.mass_kg,
+            "diameter_m":       res.variant.diameter_m,
+            "cd0":              res.variant.cd0,
+            "bc_kg_m2":         res.variant.ballistic_coefficient,
+            "v_exit_ms":        res.variant.launch_v_ms,
+            "apogee_km":        res.apogee_km,
+            "apogee_range_km":  res.apogee_range_km,
+            "peak_hf_W_m2":     res.peak_heat_flux_W_m2,
+            "vx_at_apogee_ms":  res.vx_at_apogee,
+            "v_circ_at_apogee_ms": res.v_circ_at_apogee,
+            "max_q_pa":         res.max_q_pa,
+            "max_mach":         res.max_mach,
+            "t_s":   [round(float(x), 2) for x in a["t"][::stride].tolist()],
+            "x_km":  [round(float(x), 3) for x in a["x_km"][::stride].tolist()],
+            "z_km":  [round(float(x), 3) for x in a["z_km"][::stride].tolist()],
+            "v_ms":  [round(float(x), 1) for x in a["speed"][::stride].tolist()],
+        })
+    out_path = out_dir / "huv_trajectories.json"
+    with out_path.open("w") as f:
+        json.dump({
+            "earth_radius_km":  6371.0,
+            "karman_km":        100.0,
+            "tube_length_km":   BGKPJR_TUBE_LENGTH_M / 1000.0,
+            "runs":             runs,
+        }, f, separators=(",", ":"))
+    return out_path
+
+
 def main() -> None:
     out_dir = Path(__file__).resolve().parent.parent / "data" / "huv_test"
     results = run_sweep()
     plot_path = plot_results(results, out_dir)
     md_path = write_markdown_summary(results, out_dir)
+    json_path = write_trajectories_json(results, out_dir)
 
-    print(f"  Plot     → {plot_path}")
-    print(f"  Summary  → {md_path}")
+    print(f"  Plot       → {plot_path}")
+    print(f"  Summary    → {md_path}")
+    print(f"  JSON       → {json_path}")
     print()
 
     print("Tube G-load (analytic, constant accel, BGKPJR L=28.7 km):")
