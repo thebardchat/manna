@@ -138,6 +138,84 @@ MH_DART_01 = PodConcept(
 
 
 # ---------------------------------------------------------------------------
+# Concept #2 — MH-Oval-01
+# ---------------------------------------------------------------------------
+#
+# Cargo class:  H   (water, propellant, food bricks, sintered metal stock)
+# Geometry:     Prolate spheroid ("egg" / oval) — no fins, no nose cone, single
+#               smooth body of revolution.  Long axis aligned with flight path.
+#
+# Goal:         Test whether a low-fineness sealed oval pod is competitive with
+#               the slender dart.  The oval gives up BC (frontal area dominates)
+#               but wins back cargo-bay shape, structural simplicity, no
+#               fin/sabot interface, and inherent passive aerodynamic stability
+#               at low-to-moderate Mach.
+#
+# Strategy:     Same launch mass as MH-Dart-01 (1,200 kg) for a fair compare.
+#               Length 3.0 m, max diameter 1.0 m → fineness 3.0 (between
+#               Apollo CM ≈ 1.4 and a torpedo ≈ 7).  Cd₀ ≈ 0.25 — between a
+#               sphere (1.0) and a slender body (0.10) at hypersonic speeds.
+#
+# Physics caveat:  the 3-DOF simulator is point-mass with drag only — no lift
+# is modelled.  An oval flown at angle of attack can produce real L/D (lifting
+# body, X-37B family).  This concept's sim result is the *no-lift floor*.
+
+_OVAL_DIAMETER_M     = 1.00
+_OVAL_LENGTH_M       = 3.00
+_OVAL_MASS_KG        = 1_200.0   # matched to MH-Dart-01 for comparison
+_OVAL_CD0            = 0.25      # [ESTIMATE — prolate spheroid fineness 3, hypersonic]
+_OVAL_RAIL_V         = 6_500.0   # m/s — same rail assumption as MH-Dart-01
+
+_OVAL_FRONTAL_AREA   = math.pi * (_OVAL_DIAMETER_M / 2.0) ** 2
+_OVAL_BC             = _OVAL_MASS_KG / (_OVAL_CD0 * _OVAL_FRONTAL_AREA)
+
+
+MH_OVAL_01 = PodConcept(
+    concept_id="MH-Oval-01",
+    cargo_class="H",
+    geometry="prolate spheroid (oval / egg), no fins, smooth body of revolution",
+    pod=MannaPod(
+        name="MH-Oval-01",
+        mass_kg=_OVAL_MASS_KG,
+        diameter_m=_OVAL_DIAMETER_M,
+        cd0=_OVAL_CD0,
+        launch_v_ms=_OVAL_RAIL_V,
+        v01_apogee_km=0.0,
+    ),
+    length_m=_OVAL_LENGTH_M,
+    rail_v_exit=_OVAL_RAIL_V,
+    intent=(
+        "H-class oval — give up BC vs the dart in exchange for cargo-bay shape, "
+        "structural simplicity, no fins/sabot, and passive aero-stability."
+    ),
+    notes=(
+        "Same launch mass as MH-Dart-01 to make the BC penalty visible.  Frontal "
+        "area is 4× the dart, Cd₀ is ~67% higher, so BC drops to ~6,100 kg/m² — "
+        "right at the edge of the sweep band that clears Kármán at steep elevation. "
+        "An oval flown at α generates lift (L/D up to ~1 for X-37B-class lifting "
+        "bodies); the 3-DOF point-mass sim cannot capture that.  Sim result here "
+        "is the no-lift floor — true performance lies between this and a powered "
+        "lifting-body model that doesn't yet exist in this codebase."
+    ),
+    open_issues=[
+        "Cd0 = 0.25 is a hypersonic prolate-spheroid estimate; CFD needed.",
+        "No lift modelled — sim is point-mass, drag-only.  Real L/D from an "
+        "oval at α could extend apogee meaningfully; needs 6-DOF or 3-DOF+lift.",
+        "Cargo bay is volumetrically efficient (no aspect-ratio constraint); "
+        "can carry shapes the dart cannot — but pod mass budget is the same, "
+        "so cargo mass is unchanged.",
+        "Bigger frontal area => peak heat flux per unit area is similar to dart "
+        "(Sutton-Graves goes as 1/sqrt(R_nose), and oval has larger R_nose) — "
+        "but total heat load (flux × area × time) scales with frontal area.",
+        "Structural case is simpler — closed shell vs slender beam, no L/D = 12 "
+        "buckling concern.  Likely lighter at same mass budget.",
+        "Stability without fins relies on body shape giving CP behind CG; this "
+        "is the Apollo CM trick.  Possible but constrains where mass goes.",
+    ],
+)
+
+
+# ---------------------------------------------------------------------------
 # Concept registry
 # ---------------------------------------------------------------------------
 #
@@ -146,6 +224,7 @@ MH_DART_01 = PodConcept(
 
 CONCEPT_PODS: Dict[str, PodConcept] = {
     MH_DART_01.concept_id: MH_DART_01,
+    MH_OVAL_01.concept_id: MH_OVAL_01,
 }
 
 
