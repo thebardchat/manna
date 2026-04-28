@@ -110,24 +110,50 @@ Manna-H   10,823 m/s 2,264    9.1 km       31.8       ~1.6 km     Stopped in tro
 No variant approaches the Kármán line (100 km).  None achieves orbital
 velocity at apogee.
 
-### 3.3  Ballistic coefficient (BC) feasibility gap  [DERIVED — sweep]
+### 3.3  Ballistic coefficient (BC) feasibility study  [DERIVED — simulation]
 
-A parametric sweep of BC (1,000–50,000 kg/m²) × elevation (15°–85°)
-was run for all three variants (108 simulations total).  Source:
-`simulation/src/sweep.py`.
+Sources: `simulation/src/sweep.py` (108-run parametric sweep),
+`simulation/src/bc_feasibility.py` (per-variant feasibility analysis,
+30° elevation, cd0=0.40, dt=0.5 s).
 
-Key findings:
+**Minimum BC required per variant and milestone (30° elevation):**
 
-| Milestone | Required BC | Required elevation | Current BC | Gap factor |
-|-----------|-------------|-------------------|------------|------------|
-| Kármán line (100 km) | ≥5,000 kg/m² | 75–85° | 1,592–2,264 | 2–3× BC + steep angle |
-| Orbital velocity at apogee | ≥50,000 kg/m² | 30–45° | 1,592–2,264 | 20–30× |
+| Variant | Kármán line (100 km) | Half orbital v | Full orbital v |
+|---------|---------------------|----------------|----------------|
+| Manna-B (d=0.40 m) | 30,000 kg/m² (18.8×) | Not achievable | Not achievable |
+| Manna-I (d=0.65 m) | 10,000 kg/m² (5.6×) | 20,000 kg/m² (11.1×) | Not achievable |
+| Manna-H (d=1.00 m) |  7,500 kg/m² (3.3×) | 15,000 kg/m² (6.6×)  | 50,000 kg/m² (22.1×) |
 
-**Architecture conclusion:** Current pod geometry cannot reach the
-operational apogee.  Three paths forward (not mutually exclusive):
-1. **Evacuated launch tube** — eliminate sea-level drag, most leverage
-2. **High-altitude rail site** — reduce atmospheric column traversed
-3. **Radical BC increase** — BC=50,000 at d=0.40 m requires mass=1,005 kg for Manna-B (not feasible with current sizing); requires structural redesign
+**Required pod mass and payload fraction at each milestone:**
+
+| Variant | Milestone | Required BC | Total pod mass | Payload fraction | Min material |
+|---------|-----------|-------------|----------------|------------------|--------------|
+| Manna-B | Kármán | 30,000 | 1,508 kg | 5.3% | Steel 4340 |
+| Manna-I | Kármán | 10,000 | 1,327 kg | 18.8% | Aluminum 7075 |
+| Manna-I | Half orbital | 20,000 | 2,655 kg | 9.4% | Titanium Ti-6Al-4V |
+| Manna-H | Kármán | 7,500 | 2,356 kg | 34.0% | Aluminum 7075 |
+| Manna-H | Half orbital | 15,000 | 4,712 kg | 17.0% | Aluminum 7075 |
+| Manna-H | Full orbital | 50,000 | 15,708 kg | 5.1% | Steel 4340 |
+
+> ⚠ **Finding (2026-04-28):** Materials are not the blocking constraint — payload fraction is.
+> - The current 78% mass fraction target is unreachable at any useful apogee.
+> - Manna-H at full orbital insertion requires 15,708 kg total and delivers
+>   only 5.1% payload — the economics completely break vs. the $54/kg target.
+> - Manna-B cannot reach orbital velocity at any BC achievable with 30° launch —
+>   the launch velocity (4,319 m/s) is insufficient.
+> See `simulation/data/trajectory_runs/bc_feasibility.png` for visualizations.
+> [DERIVED — simulation/src/bc_feasibility.py]
+
+**Architecture conclusion:** Current pod geometry cannot reach operational
+apogee at viable payload fractions.  Three paths forward (not mutually exclusive):
+
+1. **Evacuated launch tube** — eliminate sea-level drag entirely; most
+   leverage, requires tube infrastructure alongside rail
+2. **High-altitude rail terminus** — reduce atmosphere traversed; depends
+   on BGKPJR terrain options
+3. **Lower apogee + elliptical Tug orbit** — accept 100–200 km apogee,
+   park Tug in a highly elliptical orbit with apogee at that altitude;
+   re-derive Tug ΔV budget accordingly; most architecturally conservative
 
 ### 3.4  Inclination constraint  [ARCHITECTURE ISSUE]
 
@@ -186,27 +212,89 @@ the exit trajectory.  `[PENDING: NASA DPLR + FIAT analysis]`
 Manna-B cargo (biologics, seedlings) must survive 2.5G maximum.
 Rail launch imposes the full launch acceleration profile plus vibration.
 
-### 5.2  Liquid suspension medium
+### 5.2  Liquid suspension medium — corrected derivation  [DERIVED]
 
-v0.1 proposed a density-matched liquid suspension medium.  The v0.1
-density claim (15 g/cm³) was flagged by the Munk review:
+v0.1 proposed a density-matched liquid suspension medium.  Two errors
+were identified by the Munk persona review:
 
-> No commercially available suspension fluid exceeds ~4 g/cm³.
-> Mercury (13.6 g/cm³) is toxic and impractical.  The 15 g/cm³ figure
-> appears to be a transcription or calculation error.
+1. **Density error:** v0.1 cited 15 g/cm³ for the suspension fluid.
+   No commercially available fluid exceeds ~4 g/cm³.  Mercury (13.6 g/cm³)
+   is toxic and excluded.  The 15 g/cm³ figure was a calculation error.
 
-FC-770 (3M fluorinert, 1.79 g/cm³) is a practical candidate.  For
-biological cells with density ~1.05 g/cm³ suspended in FC-770:
+2. **Attenuation equation inconsistency:** v0.1's equation produced
+   50× attenuation at 2% density mismatch but claimed 3–4× for the
+   large-mismatch FC-770 case.  These are inconsistent with each other
+   and neither was derived from first principles.
+
+**Correct derivation:**
+
+Consider a biological cell (density ρ_c) immersed in a suspension fluid
+(density ρ_f) inside a closed container that accelerates at rate a.
+
+In the accelerating pod frame, each fluid parcel of volume δV experiences
+an inertial pseudo-force ρ_f·δV·a.  The resulting pressure field satisfies:
 
 ```
-Density mismatch ratio:  1.79 / 1.05 = 1.70
-Theoretical G attenuation ≈ 2.4× at this mismatch  [ESTIMATE — needs full derivation]
+dP/dx = ρ_f × a       (pressure increases opposite to acceleration direction)
 ```
 
-v0.1 claimed 3–4× attenuation via an internally inconsistent equation.
-The correct derivation gives ~2.4× for the FC-770 / cell-mass combination.
-Whether 2.4× is sufficient to protect 2.5G cargo from 100–800G rail
-launch requires a complete isolation trade study.  `[PENDING]`
+For a spherical cell of volume V = (4/3)πr³, the net pressure force
+(buoyancy) acting on the cell is:
+
+```
+F_buoy = ρ_f × V × a   (in the acceleration direction)
+```
+
+The net mechanical load on the cell structure (the force the cell walls
+must resist) equals the inertial load minus buoyancy:
+
+```
+F_net = ρ_c × V × a  −  ρ_f × V × a  =  (ρ_c − ρ_f) × V × a
+```
+
+The effective acceleration experienced by the cell (normalized to cell mass):
+
+```
+a_eff = F_net / (ρ_c × V)  =  (1 − ρ_f/ρ_c) × a
+```
+
+**Attenuation factor** = a_applied / |a_eff|:
+
+```
+Attenuation  =  ρ_c / |ρ_c − ρ_f|
+```
+
+For FC-770 (ρ_f = 1.79 g/cm³) and biological cells (ρ_c = 1.05 g/cm³):
+
+```
+Attenuation  =  1.05 / |1.05 − 1.79|  =  1.05 / 0.74  =  1.42×   [DERIVED]
+```
+
+Note: since ρ_f > ρ_c, the buoyancy force *exceeds* the cell's inertial
+load — the cell floats *toward* the front wall rather than the back wall.
+The net mechanical load is in the opposite direction to the pod acceleration,
+at 1.42× reduced magnitude compared to unsupported flight.
+
+**Comparison to v0.1 claims:**
+
+| Source | Attenuation for FC-770/cell | Method |
+|--------|----------------------------|--------|
+| v0.1 equation (50× at 2% mismatch) | ~1.4× (using same formula) | ρ_c/|Δρ|, inconsistently applied |
+| v0.1 text claim | 3–4× | No derivation |
+| This derivation (v0.2) | **1.42×** | First-principles buoyancy [DERIVED] |
+
+**Design implication:**  1.42× attenuation is grossly insufficient.
+To protect cargo at 2.5G, a rail acceleration of ~100G (Manna-B launch)
+would still impose ~70G on the cell structure after suspension.  A single
+liquid suspension layer cannot close the gap.
+
+**Required isolation:**  A multi-stage isolation system is needed.  Options
+(not yet designed):
+- Nested suspension + mechanical damper stages in series
+- Active vibration cancellation (adds power, mass, complexity)
+- Reduced launch acceleration for Manna-B (constrains rail energy budget)
+
+This is an open architectural problem.  `[PENDING — isolation trade study required]`
 
 ---
 
@@ -264,11 +352,11 @@ available in `design/concept-art/manna-variants-concept-v1.webp`.
 | # | Issue | Source | Priority | Status |
 |---|-------|---------|----------|--------|
 | 1 | Trajectory: real apogees 59–214× below v0.1 claims | Munk / Sim | CRITICAL | ✅ Confirmed |
-| 2 | BC feasibility gap: need 20–30× increase for orbital | Sim sweep | CRITICAL | ✅ Quantified |
+| 2 | BC feasibility gap: need 20–30× increase for orbital | Sim sweep | CRITICAL | ✅ Feasibility study complete — payload fraction breaks before materials do (§3.3) |
 | 3 | 35°N → equatorial plane change not budgeted | Munk #2 | HIGH | 🔵 Fix selected (§3.4) |
 | 4 | Tug rendezvous architecture undefined | Munk #3 | HIGH | OPEN |
 | 5 | TPS exit heating: PICA-X sizing unverified | Munk #4 | HIGH | 🔵 Heat flux quantified (§4) |
-| 6 | Liquid suspension density error (15 g/cc) | Munk #5 | MEDIUM | 🔵 Redesign started (§5) |
+| 6 | Liquid suspension density error + attenuation derivation | Munk #5 | MEDIUM | ✅ Correct derivation: 1.42× attenuation (§5.2); isolation trade study needed |
 | 7 | No ConOps | Lukens #1 | HIGH | OPEN |
 | 8 | No requirements / RTM | Lukens #2 | HIGH | OPEN |
 | 9 | No ICDs | Lukens #3 | HIGH | OPEN |
@@ -306,4 +394,5 @@ peer-reviewed source.*
 ---
 
 *v0.2 produced: 2026-04-25.  Trajectory simulation complete.*
-*v0.3 planned: add ConOps draft, ICD stubs, Tug reference concept.*
+*v0.2.1 updated: 2026-04-28.  BC feasibility study (§3.3), corrected liquid suspension derivation (§5.2).*
+*v0.3 planned: ConOps draft, ICD stubs, isolation trade study.*
