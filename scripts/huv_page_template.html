@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>HUV — Hypersonic Unmanned Vehicle | Concept Test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Orbitron:wght@900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#060d1a; --paper:#070f1e;
+  --g1:rgba(30,72,140,0.20); --g2:rgba(30,72,140,0.08);
+  --line:#1e488c; --line-med:rgba(30,72,140,0.40); --line-dim:rgba(30,72,140,0.20);
+  --cyan:#4d9fff; --cyan-d:rgba(77,159,255,0.10); --cyan-g:rgba(77,159,255,0.35);
+  --white:#c8deff; --dim:#3a5880; --dimmer:#1c3354;
+  --amber:#f4a020; --red:#e84040; --green:#44c080;
+  --col-huv25:#ff1744; --col-huv20:#ffb300; --col-mh:#4dd0e1;
+  --ftech:'Share Tech Mono',monospace;
+  --fhead:'Rajdhani',sans-serif;
+  --fdisplay:'Orbitron',monospace;
+  --fmono:'DM Mono',monospace;
+}
+html{background:var(--bg);min-height:100%}
+body{
+  font-family:var(--ftech); background:var(--bg); color:var(--white);
+  background-image:
+    linear-gradient(var(--g1) 1px,transparent 1px),
+    linear-gradient(90deg,var(--g1) 1px,transparent 1px),
+    linear-gradient(var(--g2) 1px,transparent 1px),
+    linear-gradient(90deg,var(--g2) 1px,transparent 1px);
+  background-size:80px 80px,80px 80px,16px 16px,16px 16px;
+  padding:24px 32px 64px;
+}
+header{
+  border:1px solid var(--line); padding:18px 22px; margin-bottom:22px;
+  background:rgba(7,15,30,0.7); display:flex; flex-wrap:wrap;
+  justify-content:space-between; align-items:center; gap:18px;
+}
+.hdr-l{display:flex; flex-direction:column; gap:4px}
+.dwg{font-size:.72rem; letter-spacing:.15em; color:var(--dim)}
+h1{font-family:var(--fdisplay); font-size:1.65rem; letter-spacing:.05em;
+   color:var(--white); font-weight:900}
+.subtitle{font-size:.78rem; color:var(--cyan); letter-spacing:.08em}
+.status{font-size:.7rem; color:var(--amber); letter-spacing:.1em;
+   border:1px solid var(--amber); padding:5px 10px}
+.back-link{font-size:.72rem; color:var(--cyan); text-decoration:none;
+  border:1px solid var(--cyan-g); padding:5px 10px; letter-spacing:.08em}
+.back-link:hover{background:var(--cyan-d)}
+
+section{
+  border:1px solid var(--line); background:rgba(7,15,30,0.65);
+  padding:18px 22px; margin-bottom:22px;
+}
+section h2{
+  font-family:var(--fhead); font-size:1.05rem; font-weight:600;
+  letter-spacing:.08em; color:var(--cyan); text-transform:uppercase;
+  margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--line-dim);
+}
+section h3{font-family:var(--fhead); font-size:.88rem; color:var(--white);
+  letter-spacing:.06em; margin:14px 0 8px; text-transform:uppercase}
+
+.hero-grid{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:12px;
+}
+.stat{
+  border:1px solid var(--line-med); padding:10px 12px;
+  background:rgba(30,72,140,0.06);
+}
+.stat .lbl{font-size:.62rem; color:var(--dim); letter-spacing:.12em;
+  text-transform:uppercase}
+.stat .val{font-family:var(--fmono); font-size:1.15rem; color:var(--white);
+  margin-top:4px}
+.stat.h25 .val{color:var(--col-huv25)}
+.stat.h20 .val{color:var(--col-huv20)}
+.stat.mh .val{color:var(--col-mh)}
+.stat .unit{font-size:.7rem; color:var(--dim); margin-left:4px}
+
+.hero-blurb{margin-top:14px; font-size:.82rem; color:var(--white);
+  line-height:1.6; max-width:980px}
+.hero-blurb strong{color:var(--cyan); letter-spacing:.04em}
+.hero-blurb .red{color:var(--red)}
+.hero-blurb .green{color:var(--green)}
+
+#traj-wrap{
+  display:flex; flex-direction:column; gap:12px;
+}
+#traj-svg{
+  width:100%; height:auto; aspect-ratio:1800/700;
+  background:rgba(6,13,26,0.4); border:1px solid var(--line-dim);
+  display:block;
+}
+.controls{
+  display:flex; flex-wrap:wrap; gap:12px; align-items:center;
+  padding:10px 12px; background:rgba(30,72,140,0.08);
+  border:1px solid var(--line-dim);
+}
+.controls button{
+  background:transparent; color:var(--white); border:1px solid var(--cyan-g);
+  padding:6px 14px; font-family:var(--ftech); font-size:.78rem;
+  letter-spacing:.08em; cursor:pointer;
+}
+.controls button:hover{background:var(--cyan-d); border-color:var(--cyan)}
+.controls button.on{background:var(--cyan-d); border-color:var(--cyan);
+  color:var(--cyan)}
+.controls label{font-size:.72rem; color:var(--dim); letter-spacing:.08em}
+.controls select{
+  background:var(--paper); color:var(--white); border:1px solid var(--line-med);
+  padding:5px 8px; font-family:var(--ftech); font-size:.74rem;
+}
+#scrub{flex:1; min-width:160px; accent-color:var(--cyan)}
+#t-display{font-family:var(--fmono); font-size:.85rem; color:var(--cyan);
+  min-width:88px; text-align:right}
+
+.readout{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:8px;
+}
+.readout .pod{
+  border:1px solid var(--line-dim); padding:10px 12px;
+  background:rgba(7,15,30,0.5);
+}
+.readout .pod.h25{border-left:3px solid var(--col-huv25)}
+.readout .pod.h20{border-left:3px solid var(--col-huv20)}
+.readout .pod.mh{border-left:3px solid var(--col-mh)}
+.readout .pod .name{font-family:var(--fhead); font-size:.85rem;
+  letter-spacing:.08em; margin-bottom:6px}
+.readout .pod.h25 .name{color:var(--col-huv25)}
+.readout .pod.h20 .name{color:var(--col-huv20)}
+.readout .pod.mh  .name{color:var(--col-mh)}
+.readout .pod .row{display:flex; justify-content:space-between;
+  font-size:.74rem; line-height:1.6}
+.readout .pod .row .k{color:var(--dim); letter-spacing:.04em}
+.readout .pod .row .v{font-family:var(--fmono); color:var(--white)}
+.readout .pod .apo-mark{color:var(--amber); font-size:.68rem; letter-spacing:.06em}
+
+#xs-wrap{display:flex; flex-direction:column; gap:14px}
+#xs-svg{width:100%; height:auto; aspect-ratio:1400/420;
+  background:rgba(6,13,26,0.4); border:1px solid var(--line-dim)}
+.layer-grid{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:10px; margin-top:10px;
+}
+.layer{
+  border:1px solid var(--line-dim); padding:9px 11px;
+  background:rgba(7,15,30,0.5);
+}
+.layer .ord{font-size:.62rem; color:var(--dim); letter-spacing:.1em}
+.layer .name{font-family:var(--fhead); font-size:.82rem; margin-top:3px;
+  color:var(--white); letter-spacing:.06em}
+.layer .range{font-family:var(--fmono); font-size:.72rem; color:var(--amber);
+  margin-top:4px}
+.layer .mech{font-size:.7rem; color:var(--dim); margin-top:3px; line-height:1.4}
+
+.bp-table{
+  width:100%; border-collapse:collapse; font-size:.74rem;
+  font-family:var(--ftech);
+}
+.bp-table th, .bp-table td{
+  padding:7px 9px; text-align:right; border:1px solid var(--line-dim);
+}
+.bp-table th{
+  background:rgba(30,72,140,0.12); color:var(--cyan); font-weight:400;
+  letter-spacing:.06em; text-transform:uppercase;
+}
+.bp-table td:first-child, .bp-table th:first-child{text-align:left}
+.bp-table tr.h25 td:first-child{color:var(--col-huv25); font-weight:600}
+.bp-table tr.h20 td:first-child{color:var(--col-huv20); font-weight:600}
+.bp-table tr.mh td:first-child{color:var(--col-mh); font-weight:600}
+
+.verdict-grid{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:14px;
+}
+.verdict-col{
+  border:1px solid var(--line-dim); padding:14px 16px;
+  background:rgba(7,15,30,0.55);
+}
+.verdict-col h3{margin-top:0}
+.verdict-col.ok h3{color:var(--green)}
+.verdict-col.fail h3{color:var(--red)}
+.verdict-col.open h3{color:var(--amber)}
+.verdict-col ul{list-style:none; padding:0; margin:0}
+.verdict-col li{font-size:.78rem; color:var(--white); line-height:1.55;
+  padding:5px 0; border-top:1px dashed var(--line-dim);}
+.verdict-col li:first-child{border-top:0}
+.verdict-col li .tag{display:inline-block; font-family:var(--fmono);
+  font-size:.62rem; color:var(--cyan); letter-spacing:.08em;
+  padding:1px 5px; border:1px solid var(--cyan-g); margin-right:6px}
+
+footer{font-size:.7rem; color:var(--dim); letter-spacing:.08em;
+  text-align:center; padding:14px 0; border-top:1px solid var(--line-dim)}
+footer a{color:var(--cyan); text-decoration:none}
+
+.legend{display:flex; flex-wrap:wrap; gap:14px; margin-top:6px;
+  font-size:.7rem; color:var(--dim)}
+.legend .item{display:flex; align-items:center; gap:6px}
+.legend .swatch{width:14px; height:3px; display:inline-block}
+
+@media (max-width:780px){
+  body{padding:14px 16px 40px}
+  .readout{grid-template-columns:1fr}
+  h1{font-size:1.3rem}
+  section{padding:14px 16px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-l">
+    <span class="dwg">DWG HUV-001 · REV 0.1 · CONCEPT TEST</span>
+    <h1>HYPERSONIC UNMANNED VEHICLE</h1>
+    <span class="subtitle">Maglev Vacuum Launch · Mach 20–25 · Silane-Reactive TPS</span>
+  </div>
+  <div class="hdr-l" style="align-items:flex-end">
+    <span class="status">⚠ CONCEPT EVAL</span>
+    <a class="back-link" href="/">← Manna index</a>
+  </div>
+</header>
+
+<section>
+  <h2>Headline — sim-derived [DERIVED]</h2>
+  <div class="hero-grid">
+    <div class="stat h25">
+      <div class="lbl">HUV-25 apogee · 30°</div>
+      <div class="val">305<span class="unit">km</span></div>
+    </div>
+    <div class="stat h25">
+      <div class="lbl">HUV-25 peak HF</div>
+      <div class="val">0.56<span class="unit">GW/m²</span></div>
+    </div>
+    <div class="stat h25">
+      <div class="lbl">HUV-25 launch G</div>
+      <div class="val">129<span class="unit">G</span></div>
+    </div>
+    <div class="stat h25">
+      <div class="lbl">HUV-25 vx/v_circ</div>
+      <div class="val">0.53</div>
+    </div>
+    <div class="stat h20">
+      <div class="lbl">HUV-20 apogee · 30°</div>
+      <div class="val">194<span class="unit">km</span></div>
+    </div>
+    <div class="stat mh">
+      <div class="lbl">Manna-H · same el.</div>
+      <div class="val">9.1<span class="unit">km</span></div>
+    </div>
+  </div>
+  <p class="hero-blurb">
+    The HUV doc proposes a <strong>vacuum-sealed maglev tube</strong> launching a slender
+    biconic waverider at <strong>Mach 20–25</strong>, with a self-applied <strong>silane → SiO₂</strong>
+    heat shield triggered on atmospheric contact.  Tested against the existing RK4 + US Std Atm 1976
+    integrator at 15° / 30° / 45° elevations.  Headline verdict:
+    <span class="red">the "novel hypersonic" framing does not close</span> — Mach 25 = 8508 m/s is
+    slower than Manna-H's current 10,822 m/s, and silane combustion adds energy to the boundary
+    layer rather than removing it.  But <span class="green">the high-BC slender body geometry
+    (BC ≈ 17,700 kg/m² vs Manna-H's 2,260)</span> is exactly the next-rev redesign direction CLAUDE.md
+    §10 already calls for.  Salvageable pieces below.
+  </p>
+</section>
+
+<section>
+  <h2>Full-scale trajectory animation · 30° elevation · true 1:1</h2>
+  <div id="traj-wrap">
+    <svg id="traj-svg" viewBox="0 0 1800 700" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="controls">
+      <button id="playBtn">▶ PLAY</button>
+      <button id="resetBtn">↺ RESET</button>
+      <label>Speed:</label>
+      <select id="speedSel">
+        <option value="1">1×</option>
+        <option value="10" selected>10×</option>
+        <option value="50">50×</option>
+        <option value="100">100×</option>
+      </select>
+      <input id="scrub" type="range" min="0" max="1000" value="0" step="0.5">
+      <span id="t-display">t = 0.0 s</span>
+    </div>
+    <div class="readout">
+      <div class="pod h25">
+        <div class="name">HUV-25 · Mach 25</div>
+        <div class="row"><span class="k">altitude</span><span class="v" data-out="h25.alt">0 km</span></div>
+        <div class="row"><span class="k">downrange</span><span class="v" data-out="h25.x">0 km</span></div>
+        <div class="row"><span class="k">speed</span><span class="v" data-out="h25.v">0 m/s</span></div>
+        <div class="row"><span class="k">phase</span><span class="v" data-out="h25.phase">pre-launch</span></div>
+      </div>
+      <div class="pod h20">
+        <div class="name">HUV-20 · Mach 20</div>
+        <div class="row"><span class="k">altitude</span><span class="v" data-out="h20.alt">0 km</span></div>
+        <div class="row"><span class="k">downrange</span><span class="v" data-out="h20.x">0 km</span></div>
+        <div class="row"><span class="k">speed</span><span class="v" data-out="h20.v">0 m/s</span></div>
+        <div class="row"><span class="k">phase</span><span class="v" data-out="h20.phase">pre-launch</span></div>
+      </div>
+      <div class="pod mh">
+        <div class="name">Manna-H · current sim</div>
+        <div class="row"><span class="k">altitude</span><span class="v" data-out="mh.alt">0 km</span></div>
+        <div class="row"><span class="k">downrange</span><span class="v" data-out="mh.x">0 km</span></div>
+        <div class="row"><span class="k">speed</span><span class="v" data-out="mh.v">0 m/s</span></div>
+        <div class="row"><span class="k">phase</span><span class="v" data-out="mh.phase">pre-launch</span></div>
+      </div>
+    </div>
+    <div class="legend">
+      <div class="item"><span class="swatch" style="background:var(--col-huv25)"></span>HUV-25 path</div>
+      <div class="item"><span class="swatch" style="background:var(--col-huv20)"></span>HUV-20 path</div>
+      <div class="item"><span class="swatch" style="background:var(--col-mh)"></span>Manna-H path</div>
+      <div class="item"><span class="swatch" style="background:var(--amber);height:1px"></span>Kármán line (100 km)</div>
+      <div class="item"><span class="swatch" style="background:var(--dim);height:1px"></span>Earth curvature (round-Earth ground reference)</div>
+      <div class="item"><span class="swatch" style="background:var(--line-med);height:1px"></span>15° / 45° elevation overlays (faded)</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Vehicle geometry · 1:50 scale</h2>
+  <div id="xs-wrap">
+    <svg id="xs-svg" viewBox="0 0 1400 420" preserveAspectRatio="xMidYMid meet"></svg>
+  </div>
+  <h3>TPS layer stack — nose cap (outer → inner)</h3>
+  <div class="layer-grid">
+    <div class="layer" style="border-left:4px solid #d4a017">
+      <div class="ord">LAYER 1 · OUTERMOST</div>
+      <div class="name">SiO₂ ablative</div>
+      <div class="range">1800–2200 °C</div>
+      <div class="mech">Auto-applied by silane burn (per doc).  Slow ablation carries heat away.  [CHEMISTRY NOT VERIFIED — see verdict]</div>
+    </div>
+    <div class="layer" style="border-left:4px solid #b8413c">
+      <div class="ord">LAYER 2</div>
+      <div class="name">UHTC ceramic</div>
+      <div class="range">1200–1800 °C</div>
+      <div class="mech">Radiates heat outward.  Conventional; same family as PICA-X heritage materials.</div>
+    </div>
+    <div class="layer" style="border-left:4px solid #2c6cb0">
+      <div class="ord">LAYER 3</div>
+      <div class="name">C/C composite</div>
+      <div class="range">600–1200 °C</div>
+      <div class="mech">Structural at high temperature.  Carbon-carbon, well-characterised aerospace material.</div>
+    </div>
+    <div class="layer" style="border-left:4px solid #5fb87d">
+      <div class="ord">LAYER 4 · INNERMOST</div>
+      <div class="name">Aerogel insulation</div>
+      <div class="range">50–300 °C</div>
+      <div class="mech">Final thermal barrier.  Payload-safe inner temperature target per doc.</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Test results · 9 simulations</h2>
+  <table class="bp-table">
+    <thead>
+      <tr>
+        <th>Variant</th>
+        <th>El°</th>
+        <th>BC (kg/m²)</th>
+        <th>Sim apogee (km)</th>
+        <th>Vacuum apogee (km)</th>
+        <th>sim/vac</th>
+        <th>vx@apo (m/s)</th>
+        <th>vx/v_circ</th>
+        <th>Peak HF (GW/m²)</th>
+        <th>Orbit flag</th>
+      </tr>
+    </thead>
+    <tbody id="results-body"></tbody>
+  </table>
+  <p style="font-size:.7rem; color:var(--dim); margin-top:10px; line-height:1.6">
+    All sim outputs <strong>[DERIVED]</strong> from <code>simulation/src/trajectory_sim.py</code>
+    (RK4, US Std Atm 1976, flat-Earth, altitude-varying gravity).  HUV mass / diameter / Cd₀ / v_exit
+    are <strong>[ESTIMATE]</strong> from the concept doc — 1500 kg, 0.6 m, Cd₀ = 0.30.  Peak heat flux
+    is <strong>[CONSTRAINT-NOT-MODELED]</strong> Sutton-Graves stagnation with R_nose = 5 cm assumed.
+  </p>
+</section>
+
+<section>
+  <h2>Verdict</h2>
+  <div class="verdict-grid">
+    <div class="verdict-col ok">
+      <h3>✓ Salvageable</h3>
+      <ul>
+        <li><span class="tag">BC</span>High-BC slender body geometry (~17,700 kg/m²) — exactly the redesign direction CLAUDE.md §10 already calls for to close the Manna-H trajectory gap.</li>
+        <li><span class="tag">TPS</span>UHTC + C/C + aerogel layer stack — conventional, well-characterised; usable on any Manna variant.</li>
+        <li><span class="tag">TUBE</span>Vacuum-tube assist on the BGKPJR rail — deserves its own concept doc in the BGKPJR repo.  StarTram-class, never built, but the physics is real.</li>
+        <li><span class="tag">SPIN</span>Spin-stabilisation during the rail run — cheap, applicable to all three Manna variants.</li>
+      </ul>
+    </div>
+    <div class="verdict-col fail">
+      <h3>✗ Does not close</h3>
+      <ul>
+        <li><span class="tag">SiH₄</span>Silane self-applied heat shield is wrong physics.  SiH₄ + 2 O₂ → SiO₂ + 2 H₂O is exothermic (~45 MJ/kg fuel) — adds energy to the boundary layer, doesn't remove it.</li>
+        <li><span class="tag">DEPOSIT</span>SiO₂ adhesion timing fails: vehicle moves 8–85 m during a 1–10 ms reaction.  The deposit forms as a trail behind the vehicle, not as a coating ON it.</li>
+        <li><span class="tag">WEIGHT</span>"Zero added weight TPS" contradicted by the doc's own layer stack.  SiO₂ + UHTC + C/C + aerogel is pre-installed — that's PICA-X with a flammable topcoat.</li>
+        <li><span class="tag">PLASMA</span>Plasma actuators replacing all control surfaces — control authority off by ~10⁵ at Mach 25 dynamic pressure.  And the doc itself mentions morphing surfaces deploy after exit.</li>
+        <li><span class="tag">v_exit</span>Mach 25 = 8508 m/s is <em>slower</em> than Manna-H's current 10,822 m/s.  The "novel hypersonic" framing is a step backward in raw v_exit.</li>
+      </ul>
+    </div>
+    <div class="verdict-col open">
+      <h3>◇ Open questions</h3>
+      <ul>
+        <li><span class="tag">PLANE</span>35° N → equatorial LEO problem applies identically to HUV.  Same matched-inclination tug fix needed (per CLAUDE.md §7.2).</li>
+        <li><span class="tag">EXIT</span>Vacuum-tube end-cap engineering — plasma window, fast iris, ablating diaphragm.  Never demonstrated at this exit velocity, repeatedly.</li>
+        <li><span class="tag">HEAT</span>Sutton-Graves peak HF assumes R_nose = 5 cm.  HUV's blunt-ogive geometry has a larger effective nose radius — peak HF likely lower than computed, but the trend holds.</li>
+        <li><span class="tag">BIO</span>50–200 G launch envelope excludes biological cargo entirely.  HUV is Manna-H-class only; not a fourth-variant slot.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Source doc: <code>docs/research/incoming/HUV_maglev_vacuum_launch_v0.1.md</code> ·
+  Sim: <code>simulation/src/huv_test.py</code> ·
+  Built by Shane Brazelton + Claude (Anthropic) · Hazel Green, AL ·
+  <a href="https://github.com/thebardchat/manna">Manna repo</a>
+</footer>
+
+<script id="traj-json" type="application/json">{{HUV_TRAJ_JSON}}</script>
+
+<script>
+'use strict';
+const DATA = JSON.parse(document.getElementById('traj-json').textContent);
+const R_EARTH = DATA.earth_radius_km;
+const KARMAN  = DATA.karman_km;
+const NS = 'http://www.w3.org/2000/svg';
+
+// Map runs by name+elevation
+const BY = {};
+for (const r of DATA.runs) BY[r.name+'@'+r.elevation_deg] = r;
+
+// Featured trio (30°) for animation
+const ACTIVE = [
+  {key:'h25', run:BY['HUV-25@30'],  color:'var(--col-huv25)', stroke:'#ff1744', rad:6},
+  {key:'h20', run:BY['HUV-20@30'],  color:'var(--col-huv20)', stroke:'#ffb300', rad:5},
+  {key:'mh',  run:BY['Manna-H@30'], color:'var(--col-mh)',    stroke:'#4dd0e1', rad:4},
+];
+
+// SVG coords: viewBox 0 0 1800 700; ground baseline_y=350; alt grows up
+const BASELINE_Y = 350;
+function ax(x){ return x; }            // x_km → svg x
+function ay(z){ return BASELINE_Y - z;} // z_km → svg y (alt up)
+
+function el(t,a,parent){
+  const e = document.createElementNS(NS,t);
+  for (const k in a) e.setAttribute(k, a[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function text(x,y,s,a,parent){
+  const t = el('text', Object.assign({
+    x, y, 'font-family':'Share Tech Mono,monospace', 'font-size':'10',
+    fill:'#3a5880'
+  }, a||{}), parent);
+  t.textContent = s;
+  return t;
+}
+
+// ─────────────────────────────  TRAJECTORY SVG  ──────────────────
+function buildTrajSvg(){
+  const svg = document.getElementById('traj-svg');
+
+  // Earth curvature reference: y_drop = x² / (2·R_E)
+  let curve = `M ${ax(0)} ${ay(0)}`;
+  for (let x = 50; x <= 1800; x += 50){
+    const drop = x*x / (2*R_EARTH);
+    curve += ` L ${ax(x)} ${ay(-drop)}`;
+  }
+  el('path', {d:curve, fill:'none', stroke:'#1c3354', 'stroke-width':'1',
+              'stroke-dasharray':'4 4', opacity:'0.7'}, svg);
+  text(ax(1500), ay(-180), 'round-Earth ground reference  (drops 254 km at 1800 km range)',
+       {fill:'#3a5880', 'font-size':'10'}, svg);
+
+  // Kármán line (100 km)
+  el('line', {x1:ax(0), y1:ay(KARMAN), x2:ax(1800), y2:ay(KARMAN),
+              stroke:'#f4a020', 'stroke-width':'1', 'stroke-dasharray':'3 6',
+              opacity:'0.45'}, svg);
+  text(ax(20), ay(KARMAN)-6, 'KÁRMÁN LINE · 100 km',
+       {fill:'#f4a020', 'font-size':'10', 'letter-spacing':'0.1em'}, svg);
+
+  // Ground line (z = 0)
+  el('line', {x1:ax(0), y1:ay(0), x2:ax(1800), y2:ay(0),
+              stroke:'#3a5880', 'stroke-width':'1', opacity:'0.5'}, svg);
+  text(ax(20), ay(0)-4, 'GROUND  z = 0  (launch-site horizontal)',
+       {fill:'#3a5880', 'font-size':'10'}, svg);
+
+  // Y axis ticks (altitude)
+  for (const z of [50,100,150,200,250,300]){
+    el('line', {x1:ax(0)-4, y1:ay(z), x2:ax(0), y2:ay(z),
+                stroke:'#3a5880', 'stroke-width':'1'}, svg);
+    text(ax(0)-8, ay(z)+3, `${z}`, {fill:'#3a5880','text-anchor':'end','font-size':'9'}, svg);
+  }
+  text(ax(0)-8, ay(330), 'km', {fill:'#3a5880','text-anchor':'end','font-size':'9'}, svg);
+
+  // X axis ticks (downrange)
+  for (const x of [200,400,600,800,1000,1200,1400,1600,1800]){
+    el('line', {x1:ax(x), y1:ay(0), x2:ax(x), y2:ay(0)+4,
+                stroke:'#3a5880', 'stroke-width':'1'}, svg);
+    text(ax(x), ay(0)+16, `${x}`, {fill:'#3a5880','text-anchor':'middle','font-size':'9'}, svg);
+  }
+  text(ax(1800), ay(0)+30, 'downrange (km)', {fill:'#3a5880','text-anchor':'end','font-size':'9'}, svg);
+
+  // Faded 15° / 45° overlay paths for all variants
+  const VAR_COLOR = {'HUV-25':'#ff1744','HUV-20':'#ffb300','Manna-H':'#4dd0e1'};
+  for (const r of DATA.runs){
+    if (r.elevation_deg === 30) continue;
+    let d = '';
+    for (let i=0;i<r.t_s.length;i++){
+      d += (i===0?'M ':' L ') + ax(r.x_km[i]) + ' ' + ay(r.z_km[i]);
+    }
+    el('path', {d, fill:'none', stroke:VAR_COLOR[r.name],
+                'stroke-width':'0.7', opacity:'0.25', 'stroke-dasharray':'2 3'}, svg);
+  }
+
+  // Active 30° paths (solid, bright)
+  for (const a of ACTIVE){
+    const r = a.run;
+    let d = '';
+    for (let i=0;i<r.t_s.length;i++){
+      d += (i===0?'M ':' L ') + ax(r.x_km[i]) + ' ' + ay(r.z_km[i]);
+    }
+    el('path', {d, fill:'none', stroke:a.stroke, 'stroke-width':'1.6',
+                opacity:'0.85'}, svg);
+    // Apogee marker
+    const apo_z = r.apogee_km;
+    let apo_x = 0;
+    for (let i=0;i<r.t_s.length;i++){
+      if (r.z_km[i] >= apo_z - 0.5) { apo_x = r.x_km[i]; break; }
+    }
+    el('circle', {cx:ax(apo_x), cy:ay(apo_z), r:3, fill:a.stroke, opacity:'0.7'}, svg);
+    text(ax(apo_x)+8, ay(apo_z)-4, `${r.name} apogee ${apo_z.toFixed(0)} km`,
+         {fill:a.stroke,'font-size':'9.5','letter-spacing':'0.04em'}, svg);
+  }
+
+  // Launch site marker
+  el('circle', {cx:ax(0), cy:ay(0), r:5, fill:'#f4a020'}, svg);
+  text(ax(8), ay(0)-8, 'BGKPJR rail · 34.93° N',
+       {fill:'#f4a020','font-size':'10','letter-spacing':'0.06em'}, svg);
+
+  // Animated dots — created last so they sit on top
+  for (const a of ACTIVE){
+    a.dot = el('circle', {
+      cx: ax(0), cy: ay(0), r:a.rad, fill:a.stroke,
+      stroke:'rgba(7,15,30,0.85)','stroke-width':'2'}, svg);
+    a.dot.style.filter = 'drop-shadow(0 0 4px '+a.stroke+')';
+  }
+}
+
+// ─────────────────────────────  TIME / ANIMATION  ────────────────
+let T_ANIM = 0;            // simulated time (seconds)
+let SPEED  = 10;           // multiplier
+let PLAYING = false;
+let LAST_TS = 0;
+const T_MAX = Math.max(...ACTIVE.map(a=>a.run.t_s[a.run.t_s.length-1]));
+
+function interpAt(run, t){
+  const ts = run.t_s;
+  if (t <= ts[0])            return {x:run.x_km[0], z:run.z_km[0], v:run.v_ms[0], phase:'pre-launch'};
+  if (t >= ts[ts.length-1])  return {x:run.x_km[ts.length-1], z:run.z_km[ts.length-1],
+                                     v:run.v_ms[ts.length-1], phase:'impact'};
+  // binary search
+  let lo=0, hi=ts.length-1;
+  while (hi-lo>1){
+    const mid = (lo+hi)>>1;
+    if (ts[mid] <= t) lo = mid; else hi = mid;
+  }
+  const f = (t - ts[lo]) / (ts[hi] - ts[lo]);
+  const x = run.x_km[lo] + f*(run.x_km[hi]-run.x_km[lo]);
+  const z = run.z_km[lo] + f*(run.z_km[hi]-run.z_km[lo]);
+  const v = run.v_ms[lo] + f*(run.v_ms[hi]-run.v_ms[lo]);
+  const apo = run.apogee_km;
+  const phase = (z >= apo - 1) ? 'apogee' : (run.z_km[hi] < run.z_km[lo] ? 'descent' : 'ascent');
+  return {x, z, v, phase};
+}
+
+function tick(){
+  for (const a of ACTIVE){
+    const s = interpAt(a.run, T_ANIM);
+    a.dot.setAttribute('cx', ax(s.x));
+    a.dot.setAttribute('cy', ay(s.z));
+    const out = (k) => document.querySelector(`[data-out="${a.key}.${k}"]`);
+    out('alt').textContent = s.z.toFixed(1) + ' km';
+    out('x').textContent   = s.x.toFixed(1) + ' km';
+    out('v').textContent   = s.v.toFixed(0) + ' m/s';
+    out('phase').textContent = s.phase;
+  }
+  document.getElementById('t-display').textContent = 't = ' + T_ANIM.toFixed(1) + ' s';
+  document.getElementById('scrub').value = T_ANIM;
+}
+
+function loop(ts){
+  if (!PLAYING) return;
+  if (!LAST_TS) LAST_TS = ts;
+  const dt = (ts - LAST_TS) / 1000;
+  LAST_TS = ts;
+  T_ANIM += dt * SPEED;
+  if (T_ANIM >= T_MAX){
+    T_ANIM = T_MAX;
+    PLAYING = false;
+    document.getElementById('playBtn').textContent = '▶ PLAY';
+    tick();
+    return;
+  }
+  tick();
+  requestAnimationFrame(loop);
+}
+
+document.getElementById('playBtn').addEventListener('click', () => {
+  if (PLAYING){
+    PLAYING = false;
+    document.getElementById('playBtn').textContent = '▶ PLAY';
+  } else {
+    if (T_ANIM >= T_MAX) T_ANIM = 0;
+    PLAYING = true;
+    LAST_TS = 0;
+    document.getElementById('playBtn').textContent = '❚❚ PAUSE';
+    requestAnimationFrame(loop);
+  }
+});
+document.getElementById('resetBtn').addEventListener('click', () => {
+  T_ANIM = 0; PLAYING = false; LAST_TS = 0;
+  document.getElementById('playBtn').textContent = '▶ PLAY';
+  tick();
+});
+document.getElementById('speedSel').addEventListener('change', (e) => {
+  SPEED = parseFloat(e.target.value);
+});
+document.getElementById('scrub').addEventListener('input', (e) => {
+  T_ANIM = parseFloat(e.target.value);
+  tick();
+});
+
+// ─────────────────────────────  CROSS-SECTION SVG  ───────────────
+function buildXsSvg(){
+  const svg = document.getElementById('xs-svg');
+  // 1 m = 80 px (1:50 visually).  Both vehicles 4 m long.
+  // HUV: 4 m × 0.6 m,  Manna-H: 4 m × 1.0 m.  Shown side-by-side.
+  const M = 80;
+  const cy_huv = 140;
+  const cy_mh  = 320;
+
+  function drawPod(opts){
+    const {cx, cy, len_m, dia_m, color, label, blunt} = opts;
+    const w = len_m * M;
+    const h = dia_m * M;
+    const x0 = cx - w/2, y0 = cy - h/2;
+    // Body: rounded rect with blunt nose on right
+    const noseLen = blunt ? 0.3*w : 0.25*w;
+    let d = `M ${x0} ${y0} `;
+    d += `L ${x0+w-noseLen} ${y0} `;
+    // Nose curve (Von Kármán-ish blunted)
+    d += `C ${x0+w-noseLen*0.3} ${y0} ${x0+w} ${y0+h*0.2} ${x0+w} ${cy} `;
+    d += `C ${x0+w} ${y0+h*0.8} ${x0+w-noseLen*0.3} ${y0+h} ${x0+w-noseLen} ${y0+h} `;
+    d += `L ${x0} ${y0+h} Z`;
+    el('path', {d, fill:'rgba(30,72,140,0.15)', stroke:color, 'stroke-width':'1.5'}, svg);
+
+    // Internal sections (forebody / payload / aftbody)
+    for (const fx of [0.32, 0.55, 0.78]){
+      el('line', {x1:x0+w*fx, y1:y0+4, x2:x0+w*fx, y2:y0+h-4,
+                  stroke:color, 'stroke-width':'0.7', opacity:'0.5',
+                  'stroke-dasharray':'3 3'}, svg);
+    }
+
+    // Centerline
+    el('line', {x1:x0, y1:cy, x2:x0+w-noseLen, y2:cy,
+                stroke:color, 'stroke-width':'0.5', opacity:'0.35',
+                'stroke-dasharray':'1 3'}, svg);
+
+    // Label
+    text(cx, y0+h+22, label, {
+      fill:color, 'font-size':'13', 'text-anchor':'middle',
+      'font-family':'Rajdhani,sans-serif', 'letter-spacing':'0.06em'
+    }, svg);
+    text(cx, y0+h+38, `${len_m} m × ${dia_m} m`, {
+      fill:'#3a5880', 'font-size':'10', 'text-anchor':'middle',
+      'font-family':'Share Tech Mono'
+    }, svg);
+
+    // Dimension lines
+    el('line', {x1:x0, y1:y0-18, x2:x0+w, y2:y0-18,
+                stroke:'#3a5880', 'stroke-width':'0.6'}, svg);
+    el('line', {x1:x0, y1:y0-22, x2:x0, y2:y0-14, stroke:'#3a5880', 'stroke-width':'0.6'}, svg);
+    el('line', {x1:x0+w, y1:y0-22, x2:x0+w, y2:y0-14, stroke:'#3a5880', 'stroke-width':'0.6'}, svg);
+    text(cx, y0-22, `${len_m} m`, {
+      fill:'#3a5880','font-size':'10','text-anchor':'middle'}, svg);
+  }
+
+  // HUV
+  drawPod({cx:380, cy:cy_huv, len_m:4, dia_m:0.6,
+           color:'#ff1744', label:'HUV  (proposed)', blunt:true});
+  // Manna-H
+  drawPod({cx:380, cy:cy_mh, len_m:4, dia_m:1.0,
+           color:'#4dd0e1', label:'Manna-H  (current)', blunt:false});
+
+  // TPS layer callouts on HUV nose
+  const nx = 380 + (4*M)/2;       // nose tip x
+  const ny = cy_huv;
+  el('line', {x1:nx, y1:ny, x2:nx+140, y2:ny-60,
+              stroke:'#3a5880','stroke-width':'0.6'}, svg);
+  el('circle', {cx:nx, cy:ny, r:3, fill:'#ff1744'}, svg);
+  text(nx+150, ny-80, 'NOSE-CAP STACK', {
+    fill:'#c8deff','font-size':'11','font-family':'Rajdhani,sans-serif',
+    'letter-spacing':'0.08em'}, svg);
+  const layers = [
+    ['1', 'SiO₂ ablative',   '1800–2200 °C', '#d4a017'],
+    ['2', 'UHTC ceramic',    '1200–1800 °C', '#b8413c'],
+    ['3', 'C/C composite',    '600–1200 °C', '#2c6cb0'],
+    ['4', 'Aerogel inner',     '50–300 °C',  '#5fb87d'],
+  ];
+  layers.forEach(([n,name,rng,col], i) => {
+    const yy = ny-62 + i*16;
+    el('rect', {x:nx+150, y:yy, width:10, height:10, fill:col, opacity:'0.85'}, svg);
+    text(nx+166, yy+8, `L${n}  ${name}`, {
+      fill:'#c8deff','font-size':'10','font-family':'Share Tech Mono'}, svg);
+    text(nx+330, yy+8, rng, {
+      fill:'#3a5880','font-size':'10','font-family':'Share Tech Mono'}, svg);
+  });
+
+  // Scale bar
+  el('line', {x1:900, y1:cy_mh+80, x2:900+M, y2:cy_mh+80,
+              stroke:'#c8deff','stroke-width':'1.2'}, svg);
+  el('line', {x1:900, y1:cy_mh+76, x2:900, y2:cy_mh+84, stroke:'#c8deff'}, svg);
+  el('line', {x1:900+M, y1:cy_mh+76, x2:900+M, y2:cy_mh+84, stroke:'#c8deff'}, svg);
+  text(900+M/2, cy_mh+96, '1 m  ·  1:50 scale', {
+    fill:'#c8deff','font-size':'10','text-anchor':'middle',
+    'letter-spacing':'0.08em'}, svg);
+
+  // Side note
+  text(950, cy_huv-90, 'BC comparison [DERIVED]:', {
+    fill:'#c8deff','font-size':'11','font-family':'Rajdhani,sans-serif',
+    'letter-spacing':'0.06em'}, svg);
+  text(950, cy_huv-70, 'HUV   m/(Cd·A) ≈ 17,684 kg/m²', {
+    fill:'#ff1744','font-size':'11','font-family':'Share Tech Mono'}, svg);
+  text(950, cy_huv-54, 'Manna-H            ≈  2,264 kg/m²', {
+    fill:'#4dd0e1','font-size':'11','font-family':'Share Tech Mono'}, svg);
+  text(950, cy_huv-34, '→ 7.8× higher BC = much lower drag loss', {
+    fill:'#44c080','font-size':'10','font-family':'Share Tech Mono',
+    'letter-spacing':'0.04em'}, svg);
+}
+
+// ─────────────────────────────  RESULTS TABLE  ────────────────────
+function buildTable(){
+  const tbody = document.getElementById('results-body');
+  const VAR_KEY = {'HUV-25':'h25','HUV-20':'h20','Manna-H':'mh'};
+  // Sort: HUV-25 first, then HUV-20, then Manna-H; within each, 15/30/45
+  const sorted = [...DATA.runs].sort((a,b) => {
+    const orderName = {'HUV-25':0,'HUV-20':1,'Manna-H':2};
+    const dn = orderName[a.name] - orderName[b.name];
+    return dn !== 0 ? dn : a.elevation_deg - b.elevation_deg;
+  });
+  for (const r of sorted){
+    const g0 = 9.80665;
+    const Re = R_EARTH*1000;
+    const vz = r.v_exit_ms * Math.sin(r.elevation_deg * Math.PI/180);
+    const vac_km = (vz*vz * Re) / ((2*g0*Re - vz*vz) * 1000);
+    const ratio  = r.apogee_km / vac_km;
+    const vxr    = r.vx_at_apogee_ms / r.v_circ_at_apogee_ms;
+    const orbital = (r.elevation_deg > 0 &&
+                     r.apogee_km > 100 &&
+                     vxr >= 1.0) ? 'YES ⚠' : 'no';
+    const cls = VAR_KEY[r.name] || '';
+    const row = `<tr class="${cls}">
+      <td>${r.name}</td>
+      <td>${r.elevation_deg.toFixed(0)}</td>
+      <td>${r.bc_kg_m2.toLocaleString(undefined,{maximumFractionDigits:0})}</td>
+      <td>${r.apogee_km.toFixed(1)}</td>
+      <td>${vac_km.toFixed(1)}</td>
+      <td>${ratio.toFixed(3)}</td>
+      <td>${r.vx_at_apogee_ms.toFixed(0)}</td>
+      <td>${vxr.toFixed(3)}</td>
+      <td>${(r.peak_hf_W_m2/1e9).toFixed(2)}</td>
+      <td>${orbital}</td>
+    </tr>`;
+    tbody.insertAdjacentHTML('beforeend', row);
+  }
+}
+
+// ─────────────────────────────  INIT  ─────────────────────────────
+buildTrajSvg();
+buildXsSvg();
+buildTable();
+document.getElementById('scrub').max = T_MAX;
+tick();
+</script>
+
+</body>
+</html>
